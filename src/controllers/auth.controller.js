@@ -54,7 +54,32 @@ export const signup = async (req, res) => {
     });
 
     await newUser.save();
+    const mailOptions = {
+      from: `"BaatCheet Team" <${process.env.EMAIL}>`,
+      to: email,
+      subject: "Welcome to BaatCheet!",
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              alt="BaatCheet Logo" 
+              style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
+            />
+          </div>
+          <h2 style="color: #444; text-align: center;">Welcome to BaatCheet, ${newUser.fullName}!</h2>
+          <p>We’re excited to have you as part of our growing community. With BaatCheet, you can now stay connected with friends, meet new people, and engage in conversations that matter to you.</p>
+          <p>Your account has been successfully created, and you can start chatting right away!</p>
+          <p>If you ever need assistance or have any questions, our team is here to help.</p>
+          <p>We’re looking forward to seeing you around, and we hope you enjoy your time with BaatCheet.</p>
+          <p>Best regards,<br>BaatCheet Team</p>
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+          <p style="font-size: 12px; color: #888; text-align: center;">If you need any assistance, feel free to <a href="mailto:vermadheeraj945@gmail.com" style="color: #007BFF;">contact us</a>.</p>
+        </div>
+      `,
+    };
     generateToken(newUser._id, res);
+    await transporter.sendMail(mailOptions);
     return res.status(201).json({
       status: "success",
       message: "Successfully created user account",
@@ -91,8 +116,49 @@ export const login = async (req, res) => {
         .status(400)
         .json({ status: "error", message: "Invalid credentials" });
     }
+    const mailOptions = {
+      from: `"BaatCheet" <${process.env.EMAIL}>`,
+      to: email,
+      subject: "Login Activity Notification",
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              alt="BaatCheet Logo" 
+              style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
+            />
+          </div>
+          <h2 style="color: #444; text-align: center;">Login Activity Alert</h2>
+          <p>Dear ${user.fullName},</p>
+          <p>We noticed a new login to your BaatCheet account. If this was you, you can safely ignore this message.</p>
+          <p>If this wasn't you, please secure your account immediately by changing your password using the link below:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a 
+              href="${process.env.BASE_URL}" 
+              style="
+                text-decoration: none; 
+                background-color: #007BFF; 
+                color: white; 
+                padding: 12px 24px; 
+                border-radius: 5px; 
+                font-size: 16px;
+                font-weight: bold;
+                display: inline-block;"
+            >
+              Change Password
+            </a>
+          </div>
+          <p>Thank you for being a part of the BaatCheet community. If you have any concerns, please contact us immediately.</p>
+          <p>Thank you,<br>BaatCheet Team</p>
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+           <p style="font-size: 12px; color: #888; text-align: center;">If you need any assistance, feel free to <a href="mailto:vermadheeraj945@gmail.com" style="color: #007BFF;">contact us</a>.</p></div>
+      `,
+    };
 
     generateToken(user._id, res);
+    await transporter.sendMail(mailOptions);
+
     return res.status(200).json({
       status: "success",
       message: "Logged in successfully",
@@ -132,7 +198,9 @@ export const updateProfile = async (req, res) => {
         .status(400)
         .json({ status: "error", message: "Profile pic is requried" });
     }
-    const response = await cloudinary.uploader.upload(profilePic);
+    const response = await cloudinary.uploader.upload(profilePic, {
+      folder: "BaatCheet/ProfilePics",
+    });
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePic: response.secure_url },
@@ -212,7 +280,7 @@ export const updatePassword = async (req, res) => {
   }
 };
 
-export const sendMail = async (req, res) => {
+export const sendResetMail = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -233,34 +301,53 @@ export const sendMail = async (req, res) => {
     }
 
     const token = await generateMailToken();
-    const resetLink = `${process.env.BASE_URL}/reset-password/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    const resetLink = `${
+      process.env.BASE_URL
+    }/reset-password/verify?email=${encodeURIComponent(
+      email
+    )}&token=${encodeURIComponent(token)}`;
     const mailOptions = {
-      from: process.env.EMAIL,
+      from: `"BaatCheet" <${process.env.EMAIL}>`,
       to: email,
       subject: "Reset Your Password",
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" alt="BaatCheet Logo" style="width: 150px;"/>
+            <img 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              alt="BaatCheet Logo" 
+              style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
+            />
           </div>
-          <h2 style="color: #444;">Hi ${user.fullName},</h2>
-          <p>We received a request to reset your password. If this was you, click the button below to reset your password:</p>
+          <h2 style="color: #444; text-align: center;">Password Reset Request</h2>
+          <p>Dear ${user.fullName},</p>
+          <p>We received a request to reset your password for your BaatCheet account. If you made this request, please click the button below to reset your password:</p>
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${resetLink}" style="text-decoration: none; background-color: #007BFF; color: white; padding: 10px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
+            <a 
+              href="${resetLink}" 
+              style="
+                text-decoration: none; 
+                background-color: #007BFF; 
+                color: white; 
+                padding: 12px 24px; 
+                border-radius: 5px; 
+                font-size: 16px;
+                font-weight: bold;
+                display: inline-block;"
+            >
               Reset Password
             </a>
           </div>
-          <p>If you did not request this, you can safely ignore this email.</p>
-          <p style="margin-top: 20px;">Thank you,<br>BaatCheet Team</p>
+          <p>This link will expire in 5 minutes. If you did not request this, please ignore this email. Your account remains secure.</p>
+          <p>Thank you,<br>BaatCheet Team</p>
           <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
-          <p style="font-size: 12px; color: #888;">If you have any questions, feel free to <a href="mailto:dheerajverma82664442@gmail.com" style="color: #007BFF;">contact us</a>.</p>
-        </div>
+           <p style="font-size: 12px; color: #888; text-align: center;">If you need any assistance, feel free to <a href="mailto:vermadheeraj945@gmail.com" style="color: #007BFF;">contact us</a>.</p>     </div>
       `,
     };
 
-    const mail = await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
+    user.resetPasswordExpires = Date.now() + 300000;
     await user.save();
 
     return res.status(200).json({

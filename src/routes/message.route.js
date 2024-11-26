@@ -8,7 +8,7 @@ import {
 
 const router = express.Router();
 
-router.get("/user", protectRoute, getUserForSidebar);
+router.get("/users", protectRoute, getUserForSidebar);
 
 router.get("/:id", protectRoute, getMessages);
 

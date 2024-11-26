@@ -17,7 +17,7 @@ export const protectRoute = async (req, res, next) => {
     }
 
     const user = await User.findById(decodedId.userId).select(
-      "-resetPasswordToken resetPasswordExpires"
+      "-resetPasswordToken -resetPasswordExpires"
     );
     if (!user) {
       return res

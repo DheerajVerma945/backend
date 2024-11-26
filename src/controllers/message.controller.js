@@ -7,7 +7,7 @@ export const getUserForSidebar = async (req, res) => {
     const loggedInUserId = req.user._id;
     const filteredUsers = await User.find({
       _id: { $ne: loggedInUserId },
-    }).select("-password resetPasswordToken resetPasswordExpires");
+    }).select("-password -resetPasswordToken -resetPasswordExpires");
     return res.status(200).json({
       status: "success",
       message: "Users fetched successfully",
@@ -26,6 +26,12 @@ export const getMessages = async (req, res) => {
   try {
     const { id: freindId } = req.params;
     const myId = req.user._id;
+    if(myId.equals(freindId)){
+      return res.status(400).json({
+        status:'error',
+        message:"Sender and reciever id cannot be same"
+      })
+    }
 
     const messages = await Message.find({
       $or: [
@@ -57,10 +63,27 @@ export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
     const { id: receiverId } = req.params;
+    if(req.user._id.equals(receiverId)){
+      return res.status(400).json({
+        status:'error',
+        message:"Sender and reciever id cannot be same"
+      })
+    }
+    const receiver = await User.findById(receiverId).select(
+      "-password -resetPasswordToken -resetPasswordExpires"
+    );
+    if (!receiver) {
+      return res.status(400).json({
+        status: "error",
+        message: "Receiver id is invalid",
+      });
+    }
     const senderId = req.user._id;
     let imageUrl;
     if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        folder: "BaatCheet/ChatPhotos",
+      });
       imageUrl = uploadResponse.secure_url;
     }
     const newMessage = new Message({

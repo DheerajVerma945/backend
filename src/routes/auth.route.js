@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 import { protectRoute } from "../middleware/auth.middleware.js";
-import {login,logout,signup,updateProfile,userAuth,updatePassword,  sendMail,  verifyMailTokenAndChangePass} from "../controllers/auth.controller.js"
+import {login,logout,signup,updateProfile,userAuth,updatePassword,  sendResetMail,  verifyMailTokenAndChangePass} from "../controllers/auth.controller.js"
 
 router.post("/signup",signup)
 
@@ -15,7 +15,7 @@ router.get("/check",protectRoute,userAuth);
 
 router.patch("/update-password",protectRoute,updatePassword);
 
-router.post("/forgot-password/mail",sendMail);
+router.post("/forgot-password/mail",sendResetMail);
 
 router.post("/forgot-password/verify",verifyMailTokenAndChangePass);
 
