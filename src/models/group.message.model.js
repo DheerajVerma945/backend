@@ -1,16 +1,16 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema(
+const groupMessageSchema = mongoose.Schema(
   {
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: true,
+      ref: "User",
     },
-    receiverId: {
+    groupId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: true,
+      ref: "Group",
     },
     text: {
       type: String,
@@ -19,8 +19,10 @@ const messageSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
+const GroupChat = mongoose.model("GroupChat",groupMessageSchema);
 
-const Message = mongoose.model("Message",messageSchema);
-export default Message; 
+export default GroupChat;

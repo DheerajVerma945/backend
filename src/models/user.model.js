@@ -29,6 +29,11 @@ const userSchema = mongoose.Schema(
       type: Date,
       default: null,
     },
+    groups:{
+      type:[mongoose.Schema.Types.ObjectId],
+      default:[],
+      ref:"Group",
+    }
   },
   {
     timestamps: true,
