@@ -286,6 +286,12 @@ export const joinGroup = async (req, res) => {
         message: "Group not found",
       });
     }
+    if(group.visibility === "private"){
+      return res.status(400).json({
+        status:"error",
+        message:"Group is private, Cannot join without invite"
+      })
+    }
     group.members = [...group.members, req.user._id];
     req.user.groups = req.user.groups
       ? [...req.user.groups, groupId]
@@ -363,7 +369,7 @@ export const deleteGroup = async (req, res) => {
 
 export const updateGroup = async (req, res) => {
   try {
-    const { newName, newPhoto, groupId, description } = req.body;
+    const { newName, newPhoto, groupId, description,visibility } = req.body;
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
@@ -382,6 +388,11 @@ export const updateGroup = async (req, res) => {
         status: "error",
         message: "Only admin can edit the group info",
       });
+    }
+    if(visibility){
+      if(visibility === "private" || visibility === "public"){
+        group.visibility = visibility;
+      }
     }
     if (newName) {
       group.name = newName;

@@ -26,6 +26,15 @@ const groupSchema = mongoose.Schema(
       required: true,
       ref: "Users",
     },
+    visibility:{
+      type:String,
+      required:true,
+      default:"public",
+      enum:{
+        values:["public","private"],
+        message:`{Value} is invalid visibility type`
+      }
+    }
   },
   {
     timestamps: true,

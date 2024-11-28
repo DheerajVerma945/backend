@@ -1,13 +1,11 @@
 import express from "express";
-import authRoutes from "./routes/auth.route.js";
-import messageRoutes from "./routes/message.route.js";
-import groupRoutes from "./routes/group.route.js";
-import groupChatRoutes from "./routes/groupchat.route.js"
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./lib/db.js";
 import cors from "cors";
 import { app,server } from "./lib/socket.js";
+import {authRoutes,messageRoutes,groupChatRoutes,groupRoutes,groupReqRoutes,userReqRoutes} from "./routes/index.js"
+
 
 dotenv.config();
 
@@ -26,6 +24,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/group",groupRoutes);
 app.use("/api/group/messages",groupChatRoutes);
+app.use("/api/user/request",userReqRoutes)
+app.use("/api/group/request",groupReqRoutes)
+
 
 
 server.listen(PORT, () => {
