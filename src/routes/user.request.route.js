@@ -8,7 +8,7 @@ router.post("/send",protectRoute,sendRequest);
 
 router.get("/fetch",protectRoute,getRequests);
 
-router.post("/review",protectRoute,reviewRequest);
+router.post("/review/:status",protectRoute,reviewRequest);
 
 router.delete("/remove",protectRoute,removeConnection);
 

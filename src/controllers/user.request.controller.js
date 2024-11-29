@@ -5,6 +5,12 @@ export const sendRequest = async (req, res) => {
   try {
     const currUser = req.user;
     const { userId } = req.body;
+    if (userId.toString() === currUser._id.toString()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Cannot send request to yourself",
+      });
+    }
     const user = await User.findById(userId);
     if (!user) {
       return res.status(400).json({
@@ -79,6 +85,13 @@ export const reviewRequest = async (req, res) => {
   try {
     const { status } = req.params;
     const { reqId } = req.body;
+    const validStatuses = ["accepted", "rejected"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid status value",
+      });
+    }
     const request = await UserRequest.findById(reqId);
 
     if (!request) {
@@ -108,7 +121,7 @@ export const removeConnection = async (req, res) => {
     const { userId } = req.body;
     const currUserId = req.user._id;
 
-    const request = await findOneAndDelete({
+    const request = await UserRequest.findOneAndDelete({
       $or: [
         { senderId: userId, receiverId: currUserId },
         { senderId: currUserId, receiverId: userId },
