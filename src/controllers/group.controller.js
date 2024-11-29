@@ -252,7 +252,7 @@ export const exitGroup = async (req, res) => {
     group.members = group.members.filter(
       (member) => member._id.toString() !== req.user._id.toString()
     );
-    user.groups = user.groups.filter((group) => group.toString() !== groupId);
+    user.groups = user.groups.filter((group) => group._id.toString() !== groupId);
 
     await group.save();
     await user.save();

@@ -51,7 +51,7 @@ export const sendInviteByAdmin = async (req, res) => {
         });
     }
 
-    if (group.visibility !== "private") {
+    if (group.visibility !== "private" && receiver.privacy !== true) {
       return res
         .status(400)
         .json({
