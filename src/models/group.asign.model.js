@@ -12,7 +12,7 @@ const groupSchema = mongoose.Schema(
     },
     photo: {
       type: String,
-      default: "",
+      default: "https://res.cloudinary.com/dzitsseoz/image/upload/v1732895657/blankDP/dlqp7rkz2oczjbogrmr7.jpg",
     },
     members: [
       {
