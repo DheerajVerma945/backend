@@ -37,6 +37,12 @@ const userSchema = mongoose.Schema(
     privacy:{
       type:Boolean,
       default:true
+    },
+    username:{
+      type:String,
+      maxLength:10,
+      unique:true,
+      required:true,
     }
   },
   {

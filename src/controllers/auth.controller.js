@@ -14,13 +14,25 @@ const transporter = nodemailer.createTransport({
 });
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullName, email, password, username } = req.body;
 
   try {
     if (!fullName || !email || !password) {
       return res
         .status(400)
         .json({ status: "error", message: "All fields are required" });
+    }
+    if (username.length > 10) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username cant be more than 10 characters",
+      });
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username contains invalid characters",
+      });
     }
 
     if (!validator.isEmail(email)) {
@@ -51,6 +63,7 @@ export const signup = async (req, res) => {
       email,
       password: hashPassword,
       fullName,
+      username,
     });
 
     await newUser.save();
@@ -422,6 +435,41 @@ export const verifyMailTokenAndChangePass = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "An error occurred while resetting the password",
+    });
+  }
+};
+
+export const validateUserName = async (req, res) => {
+  const username = req.body.username.trim();
+  try {
+    if (username.length > 10) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username cant be more than 10 characters",
+      });
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username contains invalid characters",
+      });
+    }
+    const existingUserName = await User.findOne({ username });
+    if (!existingUserName) {
+      return res.status(200).json({
+        status: "success",
+        message: "Username is available",
+      });
+    }
+    return res.status(404).json({
+      status: "error",
+      message: "Username not available",
+    });
+  } catch (error) {
+    console.log("Error in validatingUserName ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
     });
   }
 };
