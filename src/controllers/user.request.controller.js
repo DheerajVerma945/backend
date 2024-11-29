@@ -158,7 +158,7 @@ export const getConnections = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Connections fetched successfully",
-      data
+      data,
     });
   } catch (error) {
     console.log("Error in getting the user connections ->", error?.message);
@@ -169,48 +169,43 @@ export const getConnections = async (req, res) => {
   }
 };
 
-
 export const exploreUsers = async (req, res) => {
   try {
     const userId = req.user._id;
+
     const existingEngagement = await UserRequest.find({
-        $or:[
-            {senderId:userId},
-            {receiverId:userId},
-        ]
+      $or: [{ senderId: userId }, { receiverId: userId }],
     });
-    if(!existingEngagement || existingEngagement.length === 0){
-        const newUsers = await User.find({_id:{$ne:userId}}).select("fullName profilePic");
-        if(!newUsers || newUsers.length === 0){
-            return res.status(404).json({
-                status:"error",
-                messae:"No users avaialbe to explore at the momment",
-            })
-        }
-    }
-    const hiddenUsers = [];
 
-    existingEngagement.map((req)=>req.senderId.toString() === userId ? hiddenUsers.push(req.receiverId):hiddenUsers.push(req.senderId));
-    const newUsers = await User.find({_id:{$nin:hiddenUsers}}).select("fullName profilePic");
+    const hiddenUsers =
+      existingEngagement?.reduce((acc, req) => {
+        acc.push(
+          req.senderId.toString() === userId ? req.receiverId : req.senderId
+        );
+        return acc;
+      }, []) || [];
 
-    if(!newUsers || newUsers.length === 0){
-        return res.status(404).json({
-            status:"error",
-            messae:"No users avaialbe to explore at the momment",
-        })
+    const newUsers = await User.find({
+      _id: { $nin: [...hiddenUsers, userId] },
+    }).select("fullName profilePic");
+
+    if (!newUsers.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No users available to explore at the moment",
+      });
     }
+
     return res.status(200).json({
-        status:"success",
-        messae:"New users fetched",
-        data:newUsers
-    })
-    
-
+      status: "success",
+      message: "New users fetched",
+      data: newUsers,
+    });
   } catch (error) {
-    console.log("Error in exploring user ->",error?.message);
+    console.error("Error in exploring user ->", error.message);
     return res.status(500).json({
-        status:"error",
-        messae:"Internal server error",
-    })
+      status: "error",
+      message: "Internal server error",
+    });
   }
 };
