@@ -334,7 +334,7 @@ export const reviewInviteByUser = async (req, res) => {
         message: "No request recieved for this groupId",
       });
     }
-    if (request.receiverId.toString() !== user._id) {
+    if (request.receiverId.toString() !== user._id.toString()) {
       return res.status(400).json({
         status: "error",
         message: "Only reciever can review the requests",
