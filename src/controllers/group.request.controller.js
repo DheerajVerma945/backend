@@ -13,6 +13,19 @@ export const sendInviteByAdmin = async (req, res) => {
         message: "Invalid group id",
       });
     }
+    const exisitingRequest = await GroupRequest.findOne({
+      $or: [
+        { senderId, receiverId },
+        { senderId: receiverId, receiverId: senderId },
+      ],
+    });
+
+    if (exisitingRequest) {
+      return res.status(401).json({
+        status: "error",
+        message: "Request already exists",
+      });
+    }
     const group = await Group.findById(groupId);
     const receiver = await User.findById(receiverId);
     if (!receiver) {
@@ -73,6 +86,19 @@ export const sendInviteByUser = async (req, res) => {
         message: "invalid group Id",
       });
     }
+    const exisitingRequest = await GroupRequest.findOne({
+      $or: [
+        { senderId: user._id, receiverId: groupId },
+        { senderId: groupId, receiverId: user._id },
+      ],
+    });
+
+    if (exisitingRequest) {
+      return res.status(401).json({
+        status: "error",
+        message: "Request already exists",
+      });
+    }
     const group = await Group.findById(groupId);
     if (!group) {
       return res.status(400).json({
@@ -80,7 +106,7 @@ export const sendInviteByUser = async (req, res) => {
         message: "Group not found to request by user",
       });
     }
-    if(group.members.includes(user._id)){
+    if (group.members.includes(user._id)) {
       return res.status(400).json({
         status: "error",
         message: "Already a member ",
@@ -119,7 +145,8 @@ export const getGroupRequestsForUser = async (req, res) => {
     const requests = await GroupRequest.find({
       receiverId: user._id,
       status: "pending",
-    }).populate("senderId", "fullName profilePic");
+    }).populate("senderId", "fullName profilePic").
+    populate("groupId","name photo");
 
     if (!requests || requests.length === 0) {
       return res.status(404).json({
@@ -130,6 +157,7 @@ export const getGroupRequestsForUser = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Group requests fetched successfully",
+      data:requests
     });
   } catch (error) {
     console.log("Error in getting group requests ->", error?.message);
@@ -157,7 +185,7 @@ export const getGroupRequestsForAdmin = async (req, res) => {
         message: "Group not found to get requests for admin",
       });
     }
-    if(group.visibility === "public"){
+    if (group.visibility === "public") {
       return res.status(400).json({
         status: "error",
         message: "Public groups will not have any requests",
@@ -195,8 +223,8 @@ export const getGroupRequestsForAdmin = async (req, res) => {
 
 export const reviewInviteByAdmin = async (req, res) => {
   try {
-    const { reqId, status } = req.params;
-    const { groupId } = req.body;
+    const { status } = req.params;
+    const { reqId, groupId } = req.body;
     const user = req.user;
     if (!mongoose.isValidObjectId(reqId)) {
       return res.status(400).json({
@@ -211,24 +239,29 @@ export const reviewInviteByAdmin = async (req, res) => {
         message: "Invalid status for revewing request",
       });
     }
-    const request = await GroupRequest.findById(reqId).populate(
-      "senderId",
-      "groups"
-    );
+    const request = await GroupRequest.findById(reqId).populate("senderId","groups");
+    console.log(request);
     if (!request) {
       return res.status(400).json({
         status: "error",
         message: "Request not found",
       });
     }
-    const group = await Group.findById(groupId);
+    if (request.status === "accepted" || request.status === "rejected") {
+      return res.status(400).json({
+        status: "error",
+        message: "Request already reviewed",
+      });
+    }
+
+    const group = await Group.findById(groupId).populate("members","fullName profilePic");
     if (!group) {
       return res.status(400).json({
         status: "error",
         message: "Group not found",
       });
     }
-    if (req.receiverId.toString() !== groupId.toString()) {
+    if (request.receiverId.toString() !== groupId) {
       return res.status(400).json({
         status: "error",
         message: "Incorrect request or group id ",
@@ -237,14 +270,14 @@ export const reviewInviteByAdmin = async (req, res) => {
     if (user._id.toString() !== group.admin.toString()) {
       return res.status(401).json({
         status: "error",
-        message: "Only admins can review thw requests",
+        message: "Only admins can review the requests",
       });
     }
     request.status = status;
     if (status === "accepted") {
       group.members = [...group.members, request.senderId];
-      req.senderId.groups = req.senderId.groups
-        ? [...req.senderId.groups, groupId]
+      request.senderId.groups = request.senderId.groups
+        ? [...request.senderId.groups, groupId]
         : [groupId];
     }
     await request.save();
@@ -337,4 +370,3 @@ export const reviewInviteByUser = async (req, res) => {
     });
   }
 };
-
