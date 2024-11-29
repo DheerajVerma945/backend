@@ -4,11 +4,9 @@ import {
   getMessages,
   sendMessage,
 } from "../controllers/message.controller.js";
-import { getConnections } from "../controllers/user.request.controller.js";
 
 const router = express.Router();
 
-router.get("/users", protectRoute, getConnections);
 
 router.get("/:id", protectRoute, getMessages);
 
