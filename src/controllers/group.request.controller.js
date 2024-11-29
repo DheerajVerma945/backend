@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 import Group from "../models/group.asign.model.js";
 import User from "../models/user.model.js";
 import GroupRequest from "../models/group.request.model.js";
 
-export const sendInvite = async (req, res) => {
+export const sendInviteByAdmin = async (req, res) => {
   try {
     const { userId: receiverId, groupId } = req.body;
     const senderId = req.user._id;
@@ -33,6 +33,13 @@ export const sendInvite = async (req, res) => {
         message: "Only admin can send invite to users",
       });
     }
+    if (group.visibility !== "private") {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Cannot invite users to public group,instead you can add them.",
+      });
+    }
     if (group.members.includes(receiverId)) {
       return res.status(400).json({
         status: "error",
@@ -56,7 +63,195 @@ export const sendInvite = async (req, res) => {
   }
 };
 
-export const reviewInvite = async (req, res) => {
+export const sendInviteByUser = async (req, res) => {
+  try {
+    const user = req.user;
+    const { groupId } = req.body;
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "invalid group Id",
+      });
+    }
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(400).json({
+        status: "error",
+        message: "Group not found to request by user",
+      });
+    }
+    if (group.visibility !== "private") {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Cannot send invite to public group,instead you can join them ",
+      });
+    }
+    const newRequest = new GroupRequest({
+      senderId: user._id,
+      receiverId: groupId,
+      groupId,
+    });
+    await newRequest.save();
+    return res.status(200).json({
+      status: "success",
+      message: "Request sent successfully",
+      data: newRequest,
+    });
+  } catch (error) {
+    console.log("Error in sending request to group by user->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getGroupRequestsForUser = async (req, res) => {
+  try {
+    const user = req.user;
+    const requests = await GroupRequest.find({
+      receiverId: user._id,
+      status: "pending",
+    }).populate("senderId", "fullName profilePic");
+
+    if (!requests || requests.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No group requests at the moment",
+      });
+    }
+    return res.status(200).json({
+      status: "success",
+      message: "Group requests fetched successfully",
+    });
+  } catch (error) {
+    console.log("Error in getting group requests ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getGroupRequestsForAdmin = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const user = req.user;
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid group id-",
+      });
+    }
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(400).json({
+        status: "error",
+        message: "Group not found to get requests for admin",
+      });
+    }
+    if (group.admin.toString() !== user._id.toString()) {
+      return res.status(401).json({
+        status: "error",
+        message: "Only admins can get the request of the users",
+      });
+    }
+    const requests = await GroupRequest.find({
+      receiverId: groupId,
+      status: "pending",
+    }).populate("senderId", "fullName profilePic");
+    if (!requests || requests.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No requests at the moment",
+      });
+    }
+    return res.status(200).json({
+      status: "success",
+      message: "Requests fetched successfully",
+      data: requests,
+    });
+  } catch (error) {
+    console.log("Error in getting requests for the admin ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const reviewInviteByAdmin = async (req, res) => {
+  try {
+    const { reqId, status } = req.params;
+    const { groupId } = req.body;
+    const user = req.user;
+    if (!mongoose.isValidObjectId(reqId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid request Id",
+      });
+    }
+
+    if (status !== "accepted" && status !== "rejected") {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid status for revewing request",
+      });
+    }
+    const request = await GroupRequest.findById(reqId).populate(
+      "senderId",
+      "groups"
+    );
+    if (!request) {
+      return res.status(400).json({
+        status: "error",
+        message: "Request not found",
+      });
+    }
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(400).json({
+        status: "error",
+        message: "Group not found",
+      });
+    }
+    if (req.receiverId.toString() !== groupId.toString()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Incorrect request or group id ",
+      });
+    }
+    if (user._id.toString() !== group.admin.toString()) {
+      return res.status(401).json({
+        status: "error",
+        message: "Only admins can review thw requests",
+      });
+    }
+    request.status = status;
+    if (status === "accepted") {
+      group.members = [...group.members, request.senderId];
+      req.senderId.groups = req.senderId.groups
+        ? [...req.senderId.groups, groupId]
+        : [groupId];
+    }
+    await request.save();
+    await group.save();
+    return res.status(200).json({
+      status: "success",
+      message: `Request ${status} successfully`,
+      data: group,
+    });
+  } catch (error) {
+    console.log("Error in revewing request by admin ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const reviewInviteByUser = async (req, res) => {
   try {
     const user = req.user;
     const { groupId, reqId } = req.body;
@@ -88,11 +283,11 @@ export const reviewInvite = async (req, res) => {
     }
 
     const request = await GroupRequest.findById(reqId);
-    if(!request){
-        return res.status(400).json({
-            status:"error",
-            message:"No request recieved for this groupId"
-        })
+    if (!request) {
+      return res.status(400).json({
+        status: "error",
+        message: "No request recieved for this groupId",
+      });
     }
     if (request.receiverId.toString() !== user._id) {
       return res.status(400).json({
@@ -130,3 +325,4 @@ export const reviewInvite = async (req, res) => {
     });
   }
 };
+
