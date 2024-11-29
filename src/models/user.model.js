@@ -33,6 +33,10 @@ const userSchema = mongoose.Schema(
       type:[mongoose.Schema.Types.ObjectId],
       default:[],
       ref:"Group",
+    },
+    privacy:{
+      type:Boolean,
+      default:true
     }
   },
   {

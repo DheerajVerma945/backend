@@ -66,6 +66,12 @@ export const addMember = async (req, res) => {
         message: "Invalid User id - User not found",
       });
     }
+    if(user.privacy === true){
+      return res.status(400).json({
+        status: "error",
+        message: "Cannot add private users to the group",
+      });
+    }
     const group = await Group.findById(groupId);
     if (!group) {
       return res.status(400).json({
@@ -409,7 +415,7 @@ export const updateGroup = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
       group.photo = imageUrl;
     }
-    if (!newName && !description && !newPhoto) {
+    if (!newName && !description && !newPhoto &&!visibility) {
       return res.status(400).json({
         status: "error",
         message: "At least on feild is required",
