@@ -36,7 +36,7 @@ const userSchema = mongoose.Schema(
     },
     privacy:{
       type:Boolean,
-      default:true
+      default:false
     },
     username:{
       type:String,

@@ -14,7 +14,8 @@ const transporter = nodemailer.createTransport({
 });
 
 export const signup = async (req, res) => {
-  const { fullName, email, password, username } = req.body;
+  const { fullName, email, password} = req.body;
+  const username = req.body.username.trim();
 
   try {
     if (!fullName || !email || !password) {
