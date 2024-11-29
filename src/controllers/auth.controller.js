@@ -23,10 +23,10 @@ export const signup = async (req, res) => {
         .status(400)
         .json({ status: "error", message: "All fields are required" });
     }
-    if (username.length > 10) {
+    if (username.length > 18) {
       return res.status(400).json({
         status: "error",
-        message: "Username cant be more than 10 characters",
+        message: "Username cant be more than 18 characters",
       });
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
@@ -441,12 +441,12 @@ export const verifyMailTokenAndChangePass = async (req, res) => {
 };
 
 export const validateUserName = async (req, res) => {
-  const username = req.body.username.trim();
+  const username = req.params.username.trim();
   try {
-    if (username.length > 10) {
+    if (username.length > 18) {
       return res.status(400).json({
         status: "error",
-        message: "Username cant be more than 10 characters",
+        message: "Username cant be more than 18 characters",
       });
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {

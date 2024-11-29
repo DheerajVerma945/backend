@@ -19,6 +19,6 @@ router.post("/forgot-password/mail",sendResetMail);
 
 router.post("/forgot-password/verify",verifyMailTokenAndChangePass);
 
-router.get("/validateUserName",validateUserName)
+router.get("/validateUserName/:username",validateUserName)
 
 export default router;
