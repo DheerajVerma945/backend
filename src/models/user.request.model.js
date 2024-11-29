@@ -27,6 +27,6 @@ const userReqSchema = mongoose.Schema(
   }
 );
 
-const UserRequset = mongoose.model("UserRequest", userReqSchema);
+const UserRequest = mongoose.model("UserRequest", userReqSchema);
 
-export default UserRequset;
+export default UserRequest;

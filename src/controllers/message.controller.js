@@ -4,25 +4,7 @@ import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId } from "../lib/socket.js";
 import {io} from "../lib/socket.js"
 
-export const getUserForSidebar = async (req, res) => {
-  try {
-    const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({
-      _id: { $ne: loggedInUserId },
-    }).select("-password -resetPasswordToken -resetPasswordExpires");
-    return res.status(200).json({
-      status: "success",
-      message: "Users fetched successfully",
-      data: filteredUsers,
-    });
-  } catch (error) {
-    console.log("Error in getUserForSideBar", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server error",
-    });
-  }
-};
+
 
 export const getMessages = async (req, res) => {
   try {
