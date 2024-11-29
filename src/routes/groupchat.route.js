@@ -5,9 +5,9 @@ import { getMessages, sendMessage } from "../controllers/group.message.controlle
 const router = express.Router();
 
 
-router.post("/send",protectRoute,sendMessage);
+router.post("/send/:groupId",protectRoute,sendMessage);
 
-router.get("/getMessages",protectRoute,getMessages);
+router.get("/getMessages/:groupId",protectRoute,getMessages);
 
 
 export default router;

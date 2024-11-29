@@ -20,7 +20,7 @@ router.post("/addMember", protectRoute, addMember);
 
 router.post("/removeMember", protectRoute, removeMember);
 
-router.get("/findGroups", protectRoute, getGroups);
+router.get("/findMyGroups", protectRoute, getGroups);
 
 router.post("/exitGroup", protectRoute, exitGroup);
 
