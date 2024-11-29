@@ -172,18 +172,19 @@ export const removeMember = async (req, res) => {
     if (user.groups.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "User is not joined in any group",
+        message: "User is not joined in  group",
       });
     }
     if (!group.members.includes(memberToRemove)) {
       return res.status(400).json({
         status: "error",
-        message: "User is not in the group, cant remove",
+        message: "User is not in the group, can't remove",
       });
     }
 
-    user.groups = user.groups.filter((id) => groupId === id);
-    group.members = group.members.filter((id) => memberToRemove === id);
+    user.groups = user.groups.filter((group) => group._id.toString() !== groupId.toString());
+    group.members = group.members.filter((id) => id.toString() !== memberToRemove.toString());
+
     await user.save();
     await group.save();
     return res.status(200).json({
@@ -286,11 +287,11 @@ export const joinGroup = async (req, res) => {
         message: "Group not found",
       });
     }
-    if(group.visibility === "private"){
+    if (group.visibility === "private") {
       return res.status(400).json({
-        status:"error",
-        message:"Group is private, Cannot join without invite"
-      })
+        status: "error",
+        message: "Group is private, Cannot join without invite",
+      });
     }
     group.members = [...group.members, req.user._id];
     req.user.groups = req.user.groups
@@ -369,7 +370,7 @@ export const deleteGroup = async (req, res) => {
 
 export const updateGroup = async (req, res) => {
   try {
-    const { newName, newPhoto, groupId, description,visibility } = req.body;
+    const { newName, newPhoto, groupId, description, visibility } = req.body;
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
@@ -389,8 +390,8 @@ export const updateGroup = async (req, res) => {
         message: "Only admin can edit the group info",
       });
     }
-    if(visibility){
-      if(visibility === "private" || visibility === "public"){
+    if (visibility) {
+      if (visibility === "private" || visibility === "public") {
         group.visibility = visibility;
       }
     }

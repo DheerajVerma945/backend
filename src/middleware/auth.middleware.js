@@ -18,7 +18,7 @@ export const protectRoute = async (req, res, next) => {
 
     const user = await User.findById(decodedId.userId).select(
       "-resetPasswordToken -resetPasswordExpires"
-    );
+    ).populate("groups","name photo");
     if (!user) {
       return res
         .status(404)
