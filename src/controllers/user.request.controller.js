@@ -169,6 +169,7 @@ export const getConnections = async (req, res) => {
   }
 };
 
+
 export const exploreUsers = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -179,7 +180,37 @@ export const exploreUsers = async (req, res) => {
         ]
     });
     if(!existingEngagement || existingEngagement.length === 0){
-        const newUsers = await User.find({_id:{$ne:userId}})
+        const newUsers = await User.find({_id:{$ne:userId}}).select("fullName profilePic");
+        if(!newUsers || newUsers.length === 0){
+            return res.status(404).json({
+                status:"error",
+                messae:"No users avaialbe to explore at the momment",
+            })
+        }
     }
-  } catch (error) {}
+    const hiddenUsers = [];
+
+    existingEngagement.map((req)=>req.senderId.toString() === userId ? hiddenUsers.push(req.receiverId):hiddenUsers.push(req.senderId));
+    const newUsers = await User.find({_id:{$nin:hiddenUsers}}).select("fullName profilePic");
+
+    if(!newUsers || newUsers.length === 0){
+        return res.status(404).json({
+            status:"error",
+            messae:"No users avaialbe to explore at the momment",
+        })
+    }
+    return res.status(200).json({
+        status:"success",
+        messae:"New users fetched",
+        data:newUsers
+    })
+    
+
+  } catch (error) {
+    console.log("Error in exploring user ->",error?.message);
+    return res.status(500).json({
+        status:"error",
+        messae:"Internal server error",
+    })
+  }
 };
