@@ -7,72 +7,83 @@ export const sendInviteByAdmin = async (req, res) => {
   try {
     const { userId: receiverId, groupId } = req.body;
     const senderId = req.user._id;
-    if (!mongoose.isValidObjectId(groupId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid group id",
-      });
-    }
-    const exisitingRequest = await GroupRequest.findOne({
-      $or: [
-        { senderId, receiverId },
-        { senderId: receiverId, receiverId: senderId },
-      ],
-    });
 
-    if (exisitingRequest) {
-      return res.status(401).json({
-        status: "error",
-        message: "Request already exists",
-      });
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid group id" });
     }
+
+    const existingRequest = await GroupRequest.findOne({
+      groupId,
+      $or: [{ senderId }, { receiverId }],
+    });
+    if (existingRequest) {
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message: "Request for this group already exists",
+        });
+    }
+
     const group = await Group.findById(groupId);
     const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      return res.status(400).json({
-        status: "error",
-        message: "User not found to send invite",
-      });
-    }
-    if (!group) {
-      return res.status(400).json({
-        status: "error",
-        message: "Group not found to invite user",
-      });
-    }
-    if (group.admin.toString() !== senderId.toString()) {
-      return res.status(401).json({
-        status: "error",
-        message: "Only admin can send invite to users",
-      });
-    }
-    if (group.visibility !== "private") {
-      return res.status(400).json({
-        status: "error",
-        message:
-          "Cannot invite users to public group,instead you can add them.",
-      });
-    }
-    if (group.members.includes(receiverId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Cannot send invite to members of group",
-      });
-    }
-    const newGroupReq = new GroupRequest({ senderId, receiverId, groupId });
 
+    if (!receiver) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "User not found to send invite" });
+    }
+
+    if (!group) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Group not found to invite user" });
+    }
+
+    if (group.admin.toString() !== senderId.toString()) {
+      return res
+        .status(401)
+        .json({
+          status: "error",
+          message: "Only admin can send invite to users",
+        });
+    }
+
+    if (group.visibility !== "private") {
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message:
+            "Cannot invite users to public group, instead you can add them.",
+        });
+    }
+
+    if (group.members.includes(receiverId)) {
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message: "Cannot send invite to members of group",
+        });
+    }
+
+    const newGroupReq = new GroupRequest({ senderId, receiverId, groupId });
     await newGroupReq.save();
-    return res.status(201).json({
-      status: "success",
-      message: "Group invite sent successfully",
-      data: newGroupReq,
-    });
+
+    return res
+      .status(201)
+      .json({
+        status: "success",
+        message: "Group invite sent successfully",
+        data: newGroupReq,
+      });
   } catch (error) {
-    console.log("Error in inviting user to group ->", error?.message);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 
@@ -80,62 +91,70 @@ export const sendInviteByUser = async (req, res) => {
   try {
     const user = req.user;
     const { groupId } = req.body;
-    if (!mongoose.isValidObjectId(groupId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "invalid group Id",
-      });
-    }
-    const exisitingRequest = await GroupRequest.findOne({
-      $or: [
-        { senderId: user._id, receiverId: groupId },
-        { senderId: groupId, receiverId: user._id },
-      ],
-    });
 
-    if (exisitingRequest) {
-      return res.status(401).json({
-        status: "error",
-        message: "Request already exists",
-      });
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid group id" });
     }
+
+    const existingRequest = await GroupRequest.findOne({
+      groupId,
+      $or: [{ senderId: user._id }, { receiverId: user._id }],
+    });
+    if (existingRequest) {
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message: "Request for this group already exists",
+        });
+    }
+
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(400).json({
-        status: "error",
-        message: "Group not found to request by user",
-      });
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message: "Group not found to request by user",
+        });
     }
+
     if (group.members.includes(user._id)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Already a member ",
-      });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Already a member" });
     }
+
     if (group.visibility !== "private") {
-      return res.status(400).json({
-        status: "error",
-        message:
-          "Cannot send invite to public group,instead you can join them ",
-      });
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          message:
+            "Cannot send invite to public group, instead you can join them",
+        });
     }
+
     const newRequest = new GroupRequest({
       senderId: user._id,
       receiverId: groupId,
       groupId,
     });
     await newRequest.save();
-    return res.status(200).json({
-      status: "success",
-      message: "Request sent successfully",
-      data: newRequest,
-    });
+
+    return res
+      .status(200)
+      .json({
+        status: "success",
+        message: "Request sent successfully",
+        data: newRequest,
+      });
   } catch (error) {
-    console.log("Error in sending request to group by user->", error?.message);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 
@@ -145,8 +164,9 @@ export const getGroupRequestsForUser = async (req, res) => {
     const requests = await GroupRequest.find({
       receiverId: user._id,
       status: "pending",
-    }).populate("senderId", "fullName profilePic").
-    populate("groupId","name photo");
+    })
+      .populate("senderId", "fullName profilePic")
+      .populate("groupId", "name photo");
 
     if (!requests || requests.length === 0) {
       return res.status(404).json({
@@ -157,7 +177,7 @@ export const getGroupRequestsForUser = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Group requests fetched successfully",
-      data:requests
+      data: requests,
     });
   } catch (error) {
     console.log("Error in getting group requests ->", error?.message);
@@ -239,7 +259,10 @@ export const reviewInviteByAdmin = async (req, res) => {
         message: "Invalid status for revewing request",
       });
     }
-    const request = await GroupRequest.findById(reqId).populate("senderId","groups");
+    const request = await GroupRequest.findById(reqId).populate(
+      "senderId",
+      "groups"
+    );
     console.log(request);
     if (!request) {
       return res.status(400).json({
@@ -254,7 +277,10 @@ export const reviewInviteByAdmin = async (req, res) => {
       });
     }
 
-    const group = await Group.findById(groupId).populate("members","fullName profilePic");
+    const group = await Group.findById(groupId).populate(
+      "members",
+      "fullName profilePic"
+    );
     if (!group) {
       return res.status(400).json({
         status: "error",
