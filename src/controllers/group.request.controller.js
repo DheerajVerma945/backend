@@ -28,7 +28,7 @@ export const sendInviteByAdmin = async (req, res) => {
       });
     }
     if (group.admin.toString() !== senderId.toString()) {
-      return res.status(400).json({
+      return res.status(401).json({
         status: "error",
         message: "Only admin can send invite to users",
       });
@@ -78,6 +78,12 @@ export const sendInviteByUser = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "Group not found to request by user",
+      });
+    }
+    if(group.members.includes(user._id)){
+      return res.status(400).json({
+        status: "error",
+        message: "Already a member ",
       });
     }
     if (group.visibility !== "private") {
@@ -149,6 +155,12 @@ export const getGroupRequestsForAdmin = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "Group not found to get requests for admin",
+      });
+    }
+    if(group.visibility === "public"){
+      return res.status(400).json({
+        status: "error",
+        message: "Public groups will not have any requests",
       });
     }
     if (group.admin.toString() !== user._id.toString()) {

@@ -8,9 +8,9 @@ router.post("/send/admin",protectRoute,sendInviteByAdmin);
 
 router.post("/send/user",protectRoute,sendInviteByUser)
 
-router.get("fetchAll/user",protectRoute,getGroupRequestsForUser);
+router.get("/getRequests/user",protectRoute,getGroupRequestsForUser);
 
-router.get("fetchAll/admin/:groupId",protectRoute,getGroupRequestsForAdmin);
+router.get("/getRequests/admin/:groupId",protectRoute,getGroupRequestsForAdmin);
 
 router.post("/review/user/:status",protectRoute,reviewInviteByUser);
 
