@@ -42,7 +42,7 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
-    const data = newMessage.populate("senderId","fullName profilePic")
+    const data = await newMessage.populate("senderId","fullName profilePic")
 
     // const receiverSocketId = getReceiverSocketId(receiverId);
     // if (receiverSocketId) {
