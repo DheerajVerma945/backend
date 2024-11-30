@@ -66,7 +66,7 @@ export const addMember = async (req, res) => {
         message: "Invalid User id - User not found",
       });
     }
-    if(user.privacy === true){
+    if (user.privacy === true) {
       return res.status(400).json({
         status: "error",
         message: "Cannot add private users to the group",
@@ -188,8 +188,12 @@ export const removeMember = async (req, res) => {
       });
     }
 
-    user.groups = user.groups.filter((group) => group._id.toString() !== groupId.toString());
-    group.members = group.members.filter((id) => id.toString() !== memberToRemove.toString());
+    user.groups = user.groups.filter(
+      (group) => group._id.toString() !== groupId.toString()
+    );
+    group.members = group.members.filter(
+      (id) => id.toString() !== memberToRemove.toString()
+    );
 
     await user.save();
     await group.save();
@@ -252,7 +256,9 @@ export const exitGroup = async (req, res) => {
     group.members = group.members.filter(
       (member) => member._id.toString() !== req.user._id.toString()
     );
-    user.groups = user.groups.filter((group) => group._id.toString() !== groupId);
+    user.groups = user.groups.filter(
+      (group) => group._id.toString() !== groupId
+    );
 
     await group.save();
     await user.save();
@@ -274,19 +280,26 @@ export const exitGroup = async (req, res) => {
 export const joinGroup = async (req, res) => {
   try {
     const { groupId } = req.body;
+    const user = req.user;
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
         message: "Invalid group id",
       });
     }
-    if (req.user.groups.includes(groupId)) {
+    if (user.groups.includes(groupId)) {
       return res.status(400).json({
         status: "error",
         message: "Already joined the group",
       });
     }
     const group = await Group.findById(groupId);
+    if (group.members.includes(user._id)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Already joined the group",
+      });
+    }
     if (!group) {
       return res.status(400).json({
         status: "error",
@@ -415,7 +428,7 @@ export const updateGroup = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
       group.photo = imageUrl;
     }
-    if (!newName && !description && !newPhoto &&!visibility) {
+    if (!newName && !description && !newPhoto && !visibility) {
       return res.status(400).json({
         status: "error",
         message: "At least on feild is required",
