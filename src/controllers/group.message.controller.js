@@ -42,6 +42,7 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+    const data = newMessage.populate("senderId","fullName profilePic")
 
     // const receiverSocketId = getReceiverSocketId(receiverId);
     // if (receiverSocketId) {
@@ -50,7 +51,7 @@ export const sendMessage = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Message saved successfully",
-      data: newMessage,
+      data,
     });
   } catch (error) {
     console.log("Error in sendMessage", error);
