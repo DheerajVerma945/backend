@@ -443,6 +443,12 @@ export const verifyMailTokenAndChangePass = async (req, res) => {
 export const validateUserName = async (req, res) => {
   const username = req.params.username.trim();
   try {
+    if (username.length < 4) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username must be atleast 4 characters",
+      });
+    }
     if (username.length > 18) {
       return res.status(400).json({
         status: "error",
