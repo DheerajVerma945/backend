@@ -80,10 +80,10 @@ export const addMember = async (req, res) => {
         message: "Invalid group id - Group not found",
       });
     }
-    if (group.admin.toString() !== req.user._id.toString()) {
+    if (group.admin.toString() !== req.user._id.toString() && group.visibility === "private") {
       return res.status(400).json({
         status: "error",
-        message: "only Admins can add the members",
+        message: "only Admins can add the members to private group",
       });
     }
     if (group.members.includes(memberToAdd)) {
