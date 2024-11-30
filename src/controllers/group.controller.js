@@ -28,11 +28,12 @@ export const createGroup = async (req, res) => {
       : [newGroup._id];
     await admin.save();
     await newGroup.save();
+    const data = await newGroup.populate("members", "fullName profilePic");
 
     return res.status(201).json({
       status: "success",
       message: "Group created successfully",
-      data: newGroup,
+      data,
     });
   } catch (error) {
     console.log("Error in creating group ->", error?.message);
@@ -95,11 +96,12 @@ export const addMember = async (req, res) => {
     user.groups = user.groups ? [...user.groups, groupId] : [groupId];
     await user.save();
     await group.save();
+    const data = await newGroup.populate("members", "fullName profilePic");
 
     return res.status(200).json({
       status: "success",
       message: "User added successfully",
-      data: group,
+      data,
     });
   } catch (error) {
     console.log("Error in adding member ->", error?.message);
@@ -123,7 +125,7 @@ export const getGroups = async (req, res) => {
 
     const groups = await Group.find({
       _id: { $in: groupIds },
-    });
+    }).populate("members", "fullName profilePic");
 
     return res.status(200).json({
       status: "success",
@@ -197,10 +199,11 @@ export const removeMember = async (req, res) => {
 
     await user.save();
     await group.save();
+    const data = await newGroup.populate("members", "fullName profilePic");
     return res.status(200).json({
       status: "success",
       message: "Member successfully removed from group",
-      data: group,
+      data,
     });
   } catch (error) {
     console.log("Error while removing the member ->", error?.message);
@@ -262,11 +265,14 @@ export const exitGroup = async (req, res) => {
 
     await group.save();
     await user.save();
+    const data = await user
+      .populate("groups", "name photo")
+      .populate("groups.members", "fullName profilePic");
 
     return res.status(200).json({
       status: "success",
       message: "Group exited successfully",
-      data: user.groups,
+      data,
     });
   } catch (error) {
     console.log("Error while exiting the group ->", error?.message);
@@ -312,17 +318,19 @@ export const joinGroup = async (req, res) => {
         message: "Group is private, Cannot join without invite",
       });
     }
-    group.members = [...group.members, req.user._id];
-    req.user.groups = req.user.groups
-      ? [...req.user.groups, groupId]
-      : [groupId];
+    group.members = [...group.members, user._id];
+    user.groups = user.groups ? [...user.groups, groupId] : [groupId];
 
-    await req.user.save();
+    await user.save();
     await group.save();
+    const data = await user
+      .populate("groups", "name photo")
+      .populate("groups.members", "fullName profilePic");
+
     return res.status(200).json({
       status: "success",
       message: "Group joined successfully",
-      data: req.user,
+      data,
     });
   } catch (error) {
     console.log("Error in joining group ->", error?.message);
@@ -396,7 +404,7 @@ export const updateGroup = async (req, res) => {
         message: "Invalid group id",
       });
     }
-    const group = await Group.findById(groupId);
+    const group = await Group.findById(groupId).populate("members","fullName profilePic");
     if (!group) {
       return res.status(404).json({
         status: "error",
