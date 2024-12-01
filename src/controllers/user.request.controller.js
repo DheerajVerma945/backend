@@ -92,7 +92,10 @@ export const reviewRequest = async (req, res) => {
         message: "Invalid status value",
       });
     }
-    const request = await UserRequest.findById(reqId);
+    const request = await UserRequest.findById(reqId).populate(
+      "senderId",
+      "fullName profilePic"
+    );
 
     if (!request) {
       return res.status(404).json({
