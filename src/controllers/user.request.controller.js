@@ -225,3 +225,33 @@ export const exploreUsers = async (req, res) => {
     });
   }
 };
+
+export const searchUser = async (req, res) => {
+  try {
+    const { username } = req.params;
+    if (username === req.user.username) {
+      return res.status(400).json({
+        status: "error",
+        message: "You cannot search yourself.",
+      });
+    }
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({
+        status: "error",
+        message: "User not found, please provide correct username",
+      });
+    }
+    return res.status(200).json({
+      status: "success",
+      message: "User fetched successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.log("Error in searching user with username ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "internal server error",
+    });
+  }
+};
