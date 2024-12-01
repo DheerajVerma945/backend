@@ -31,7 +31,7 @@ router.post("/joinGroup", protectRoute, joinGroup);
 
 router.patch("/updateGroup/:groupId", protectRoute, updateGroup);
 
-router.put("/updateGroupPhoto", protectRoute, updateDp);
+router.put("/updateGroupPhoto/:groupId", protectRoute, updateDp);
 
 router.get("/exploreGroups", protectRoute, getNewGroups);
 
