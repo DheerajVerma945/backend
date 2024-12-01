@@ -524,3 +524,29 @@ export const searchUser = async (req, res) => {
     });
   }
 };
+
+export const updatePrivacy = async (req, res) => {
+  try {
+    const user = req.user;
+    const { privacy } = req.body;
+    if (privacy!== true && privacy !== false) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid privacy status",
+      });
+    }
+    user.privacy = privacy;
+    await user.save();
+    return res.status(200).json({
+      status: "success",
+      message: "Privacy updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.log("Error updating  privacy of user->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};

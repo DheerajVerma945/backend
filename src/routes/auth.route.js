@@ -1,26 +1,40 @@
 import express from "express";
 const router = express.Router();
 import { protectRoute } from "../middleware/auth.middleware.js";
-import {login,logout,signup,updateProfile,userAuth,updatePassword,  sendResetMail,  verifyMailTokenAndChangePass, validateUserName, searchUser} from "../controllers/auth.controller.js"
+import {
+  login,
+  logout,
+  signup,
+  updateProfile,
+  userAuth,
+  updatePassword,
+  sendResetMail,
+  verifyMailTokenAndChangePass,
+  validateUserName,
+  searchUser,
+  updatePrivacy,
+} from "../controllers/auth.controller.js";
 
-router.post("/signup",signup)
+router.post("/signup", signup);
 
-router.post("/login",login)
+router.post("/login", login);
 
-router.post("/logout",logout)
+router.post("/logout", logout);
 
-router.put("/update-profile",protectRoute,updateProfile);
+router.put("/update-profile", protectRoute, updateProfile);
 
-router.get("/check",protectRoute,userAuth);
+router.get("/check", protectRoute, userAuth);
 
-router.patch("/update-password",protectRoute,updatePassword);
+router.patch("/update-password", protectRoute, updatePassword);
 
-router.post("/forgot-password/mail",sendResetMail);
+router.post("/forgot-password/mail", sendResetMail);
 
-router.post("/forgot-password/verify",verifyMailTokenAndChangePass);
+router.post("/forgot-password/verify", verifyMailTokenAndChangePass);
 
-router.get("/validateUserName/:username",validateUserName);
+router.get("/validateUserName/:username", validateUserName);
 
-router.get("/search/:username",protectRoute,searchUser);
+router.get("/search/:username", protectRoute, searchUser);
+
+router.put("/updatePrivacy", protectRoute, updatePrivacy);
 
 export default router;
