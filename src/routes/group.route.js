@@ -9,6 +9,7 @@ import {
   getNewGroups,
   joinGroup,
   removeMember,
+  updateDp,
   updateGroup,
 } from "../controllers/group.controller.js";
 
@@ -28,7 +29,9 @@ router.delete("/deleteGroup", protectRoute, deleteGroup);
 
 router.post("/joinGroup", protectRoute, joinGroup);
 
-router.patch("/updateGroup", protectRoute, updateGroup);
+router.patch("/updateGroup/:groupId", protectRoute, updateGroup);
+
+router.put("/updateGroupPhoto", protectRoute, updateDp);
 
 router.get("/exploreGroups", protectRoute, getNewGroups);
 

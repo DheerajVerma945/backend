@@ -80,7 +80,10 @@ export const addMember = async (req, res) => {
         message: "Invalid group id - Group not found",
       });
     }
-    if (group.admin.toString() !== req.user._id.toString() && group.visibility === "private") {
+    if (
+      group.admin.toString() !== req.user._id.toString() &&
+      group.visibility === "private"
+    ) {
       return res.status(400).json({
         status: "error",
         message: "only Admins can add the members to private group",
@@ -397,14 +400,18 @@ export const deleteGroup = async (req, res) => {
 
 export const updateGroup = async (req, res) => {
   try {
-    const { newName, newPhoto, groupId, description, visibility } = req.body;
+    const { newName, description, visibility } = req.body;
+    const { groupId } = req.params;
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
         message: "Invalid group id",
       });
     }
-    const group = await Group.findById(groupId).populate("members","fullName profilePic");
+    const group = await Group.findById(groupId).populate(
+      "members",
+      "fullName profilePic"
+    );
     if (!group) {
       return res.status(404).json({
         status: "error",
@@ -428,15 +435,8 @@ export const updateGroup = async (req, res) => {
     if (description) {
       group.description = description;
     }
-    let imageUrl;
-    if (newPhoto) {
-      const uploadResponse = await cloudinary.uploader.upload(newPhoto, {
-        folder: "BaatCheet/Group/Dp",
-      });
-      imageUrl = uploadResponse.secure_url;
-      group.photo = imageUrl;
-    }
-    if (!newName && !description && !newPhoto && !visibility) {
+
+    if (!newName && !description && !visibility) {
       return res.status(400).json({
         status: "error",
         message: "At least on feild is required",
@@ -450,6 +450,61 @@ export const updateGroup = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in updating group ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const updateDp = async (req, res) => {
+  try {
+    const { newPhoto } = req.body;
+    const { groupId } = req.params;
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid group id",
+      });
+    }
+    const group = await Group.findById(groupId).populate(
+      "members",
+      "fullName profilePic"
+    );
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found",
+      });
+    }
+    if (group.admin.toString() !== req.user._id.toString()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Only admin can edit the group info",
+      });
+    }
+    if (!newPhoto) {
+      return res.status(400).json({
+        status: "error",
+        message: "Image is required",
+      });
+    }
+    let imageUrl;
+    if (newPhoto) {
+      const uploadResponse = await cloudinary.uploader.upload(newPhoto, {
+        folder: "BaatCheet/Group/Dp",
+      });
+      imageUrl = uploadResponse.secure_url;
+      group.photo = imageUrl;
+    }
+    await group.save();
+    return res.status(200).json({
+      status: "success",
+      message: "Image updated successfully",
+      data: group,
+    });
+  } catch (error) {
+    console.log("Error in updating group Dp ->", error?.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
