@@ -9,10 +9,12 @@ const groupSchema = mongoose.Schema(
     description: {
       type: String,
       maxLength: 200,
+      default: "",
     },
     photo: {
       type: String,
-      default: "https://res.cloudinary.com/dzitsseoz/image/upload/v1732895657/blankDP/dlqp7rkz2oczjbogrmr7.jpg",
+      default:
+        "https://res.cloudinary.com/dzitsseoz/image/upload/v1732895657/blankDP/dlqp7rkz2oczjbogrmr7.jpg",
     },
     members: [
       {
@@ -26,15 +28,15 @@ const groupSchema = mongoose.Schema(
       required: true,
       ref: "Users",
     },
-    visibility:{
-      type:String,
-      required:true,
-      default:"public",
-      enum:{
-        values:["public","private"],
-        message:`{Value} is invalid visibility type`
-      }
-    }
+    visibility: {
+      type: String,
+      required: true,
+      default: "public",
+      enum: {
+        values: ["public", "private"],
+        message: `{Value} is invalid visibility type`,
+      },
+    },
   },
   {
     timestamps: true,
