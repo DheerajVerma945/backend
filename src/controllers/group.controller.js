@@ -2,6 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import Group from "../models/group.asign.model.js";
 import GroupChat from "../models/group.message.model.js";
 import User from "../models/user.model.js";
+import GroupRequest from "../models/group.request.model.js";
 import mongoose from "mongoose";
 
 export const createGroup = async (req, res) => {
@@ -289,51 +290,63 @@ export const exitGroup = async (req, res) => {
 export const joinGroup = async (req, res) => {
   try {
     const { groupId } = req.body;
-    const user = req.user;
+
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
-        message: "Invalid group id",
+        message: "Invalid group ID",
       });
     }
+
+    const user = req.user;
     if (user.groups.includes(groupId)) {
       return res.status(400).json({
         status: "error",
         message: "Already joined the group",
       });
     }
+
     const group = await Group.findById(groupId);
-    if (group.members.includes(user._id)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Already joined the group",
-      });
-    }
     if (!group) {
       return res.status(400).json({
         status: "error",
         message: "Group not found",
       });
     }
+
+    if (group.members.includes(user._id)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Already joined the group",
+      });
+    }
+
     if (group.visibility === "private") {
       return res.status(400).json({
         status: "error",
-        message: "Group is private, Cannot join without invite",
+        message: "Group is private, cannot join without invite",
       });
     }
-    group.members = [...group.members, user._id];
-    user.groups = user.groups ? [...user.groups, groupId] : [groupId];
 
-    await user.save();
+    group.members.push(user._id);
+    user.groups.push(groupId);
+
     await group.save();
-    const data = await user
-      .populate("groups", "name photo")
-      .populate("groups.members", "fullName profilePic");
+    await user.save();
+
+    const updatedUser = await user.populate({
+      path: "groups",
+      select: "name members photo",
+      populate: {
+        path: "members", 
+        select: "fullName profilePic", 
+      },
+    });
 
     return res.status(200).json({
       status: "success",
       message: "Group joined successfully",
-      data,
+      data: updatedUser,
     });
   } catch (error) {
     console.log("Error in joining group ->", error?.message);
@@ -514,17 +527,43 @@ export const updateDp = async (req, res) => {
 
 export const getNewGroups = async (req, res) => {
   try {
-    const groups = await Group.find({ _id: { $nin: req.user.groups } });
-    if (!groups) {
+    const existingRequests = await GroupRequest.find({
+      senderId: req.user._id,
+    });
+
+    if (!existingRequests || existingRequests.length === 0) {
+      const groups = await Group.find({ _id: { $nin: req.user.groups } });
+      if (!groups) {
+        return res.status(404).json({
+          status: "error",
+          message: "No groups at the moment",
+        });
+      }
+      return res.status(200).json({
+        status: "success",
+        message: "Groups fetched successfully",
+        data: groups,
+      });
+    }
+
+    const avoidedGroups = existingRequests.map((request) => request.receiverId);
+    const newGroups = await Group.find({
+      $and: [
+        { _id: { $nin: avoidedGroups } },
+        { _id: { $nin: req.user.groups } },
+      ],
+    });
+
+    if (!newGroups) {
       return res.status(404).json({
         status: "error",
-        message: "No groups at the moment",
+        message: "New groups not avaialable right now ",
       });
     }
     return res.status(200).json({
       status: "success",
       message: "Groups fetched successfully",
-      data: groups,
+      data: newGroups,
     });
   } catch (error) {
     console.log("Error in explorin new groups ->", error?.message);
