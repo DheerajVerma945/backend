@@ -193,16 +193,14 @@ export const exploreUsers = async (req, res) => {
       $or: [{ senderId: userId }, { receiverId: userId }],
     });
 
-    const hiddenUsers =
-      existingEngagement?.reduce((acc, req) => {
-        acc.push(
-          req.senderId.toString() === userId ? req.receiverId : req.senderId
-        );
-        return acc;
-      }, []) || [];
+    const hiddenUsers = existingEngagement?.reduce((acc, req) => {
+      acc.push(req.senderId.toString() === userId.toString() ? req.receiverId : req.senderId);
+      return acc;
+    }, []) || [];
+
 
     const newUsers = await User.find({
-      _id: { $nin: [...hiddenUsers, userId] },
+      _id: { $nin: [...hiddenUsers,userId] },
     }).select("fullName profilePic");
 
     if (!newUsers.length) {
@@ -225,6 +223,7 @@ export const exploreUsers = async (req, res) => {
     });
   }
 };
+
 
 export const searchUser = async (req, res) => {
   try {
