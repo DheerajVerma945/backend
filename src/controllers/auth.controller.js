@@ -204,24 +204,19 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic, privacy } = req.body;
+    const { profilePic } = req.body;
     const user = req.user;
-    if (!privacy && !profilePic) {
+    if (!profilePic) {
       return res.status(400).json({
         status: "error",
-        message: "At least one feild is required",
+        message: "Profile pic feild is required",
       });
-    }
-    if (profilePic) {
-      const response = await cloudinary.uploader.upload(profilePic, {
-        folder: "BaatCheet/ProfilePics",
-      });
-      user.profilePic = response.secure_Url;
     }
 
-    if (privacy) {
-      user.privacy = privacy;
-    }
+    const response = await cloudinary.uploader.upload(profilePic, {
+      folder: "BaatCheet/ProfilePics",
+    });
+    user.profilePic = response.secure_url;
 
     await user.save();
 
@@ -529,7 +524,7 @@ export const updatePrivacy = async (req, res) => {
   try {
     const user = req.user;
     const { privacy } = req.body;
-    if (privacy!== true && privacy !== false) {
+    if (privacy !== true && privacy !== false) {
       return res.status(400).json({
         status: "error",
         message: "Invalid privacy status",
