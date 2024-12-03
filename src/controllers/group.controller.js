@@ -100,6 +100,8 @@ export const addMember = async (req, res) => {
     group.members.push(memberToAdd);
     await group.save();
 
+    await group.populate("members","fullName profilePic")
+
     return res.status(200).json({
       status: "success",
       message: "Users added successfully",
@@ -200,7 +202,7 @@ export const removeMember = async (req, res) => {
 
     await user.save();
     await group.save();
-    const data = await newGroup.populate("members", "fullName profilePic");
+    const data = await group.populate("members", "fullName profilePic");
     return res.status(200).json({
       status: "success",
       message: "Member successfully removed from group",
