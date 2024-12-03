@@ -223,7 +223,7 @@ export const exitGroup = async (req, res) => {
     if (!mongoose.isValidObjectId(groupId)) {
       return res.status(400).json({
         status: "error",
-        message: "Invalid group id",
+        message: "Invalid group ID",
       });
     }
 
@@ -234,46 +234,44 @@ export const exitGroup = async (req, res) => {
     if (!group) {
       return res.status(404).json({
         status: "error",
-        message: "Group not found to exit",
+        message: "Group not found",
       });
     }
 
     const user = req.user;
 
-    if (
-      !user.groups.includes(groupId) &&
-      !group.members.some(
-        (member) => member._id.toString() === req.user._id.toString()
-      )
-    ) {
+    const isMember = group.members.some(
+      (member) => member._id.toString() === user._id.toString()
+    );
+    if (!user.groups.includes(groupId) && !isMember) {
       return res.status(400).json({
         status: "error",
-        message: "Must be added in group to leave it",
+        message: "You must be part of the group to leave it",
       });
     }
 
-    if (group.admin.toString() === req.user._id.toString()) {
+    if (group.admin.toString() === user._id.toString()) {
       return res.status(400).json({
         status: "error",
-        message: "Admin cannot leave the group, they can delete instead.",
+        message: "Admins cannot leave the group. They must delete it.",
       });
     }
+
     await GroupRequest.findOneAndDelete({
+      groupId,
       $or: [{ senderId: user._id }, { receiverId: user._id }],
-      groupId: group._id,
       status: "accepted",
     });
 
     group.members = group.members.filter(
-      (member) => member._id.toString() !== req.user._id.toString()
+      (member) => member._id.toString() !== user._id.toString()
     );
-    user.groups = user.groups.filter(
-      (group) => group._id.toString() !== groupId
-    );
+    user.groups = user.groups.filter((group) => group.toString() !== groupId);
 
     await group.save();
     await user.save();
-    const data = User.findById(user._id)
+
+    const data = await User.findById(user._id)
       .populate("groups", "name photo")
       .populate("groups.members", "fullName profilePic");
 
@@ -283,7 +281,7 @@ export const exitGroup = async (req, res) => {
       data,
     });
   } catch (error) {
-    console.log("Error while exiting the group ->", error?.message);
+    console.log("Error while exiting the group ->", error.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",

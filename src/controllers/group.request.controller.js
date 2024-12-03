@@ -263,7 +263,6 @@ export const reviewInviteByAdmin = async (req, res) => {
       "senderId",
       "groups"
     );
-    console.log(request);
     if (!request) {
       return res.status(400).json({
         status: "error",
@@ -301,11 +300,12 @@ export const reviewInviteByAdmin = async (req, res) => {
     }
     request.status = status;
     if (status === "accepted") {
-      group.members = [...group.members, request.senderId];
+      group.members = [...group.members, request.senderId._id];
       request.senderId.groups = request.senderId.groups
         ? [...request.senderId.groups, groupId]
         : [groupId];
     }
+    await group.populate("members","fullName profilePic");
     await request.save();
     await group.save();
     return res.status(200).json({
