@@ -128,7 +128,7 @@ export const addMember = async (req, res) => {
       data: populatedGroup,
     });
   } catch (error) {
-    console.error("Error adding members ->", error.message);
+    console.error("Error adding members ->", error);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });
@@ -597,39 +597,54 @@ export const getConnectionsToAddGroup = async (req, res) => {
   try {
     const { groupId, connections } = req.body;
     const user = req.user;
+
     if (!mongoose.isValidObjectId(groupId)) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Invalid group ID" });
+      return res.status(400).json({ status: "error", message: "Invalid group ID" });
     }
+
     const group = await Group.findById(groupId);
     if (!group) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Group not found" });
+      return res.status(400).json({ status: "error", message: "Group not found" });
     }
+
+    if (!group.members.includes(user._id)) {
+      return res.status(401).json({
+        status: "error",
+        message: "Cannot add members without joining the group",
+      });
+    }
+
     if (
-      group.admin.toString() !== user._id.toString() ||
+      group.admin.toString() !== user._id.toString() &&
       group.visibility !== "public"
     ) {
-      return res.satus(401).json({
+      return res.status(401).json({
         status: "error",
         message: "Only admin can add members in private groups",
       });
     }
+
     if (!connections || connections.length === 0) {
-      return res.satus(400).json({
+      return res.status(400).json({
         status: "error",
         message: "No connections to add members to group",
       });
     }
-    const newUsers = connections.map(
-      (user) => !group.members.includes(user._id)
-    );
+
+    const validConnections = [];
+    for (const connection of connections) {
+      if (!group.members.includes(connection._id)) {
+        const user = await User.findById(connection._id);
+        if (user) {
+          validConnections.push(connection);
+        }
+      }
+    }
+
     return res.status(200).json({
       status: "success",
-      message: "New users fetched successfully for adding to group",
-      data: newUsers,
+      message: "Valid connections fetched successfully for adding to group",
+      data: validConnections,
     });
   } catch (error) {
     console.log("Error in finding connections for group ->", error?.message);
@@ -639,3 +654,4 @@ export const getConnectionsToAddGroup = async (req, res) => {
     });
   }
 };
+

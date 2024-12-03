@@ -157,8 +157,8 @@ export const getConnections = async (req, res) => {
       $or: [{ senderId: userId }, { receiverId: userId }],
       status: "accepted",
     })
-      .populate("senderId", "fullName profilePic")
-      .populate("receiverId", "fullName profilePic");
+      .populate("senderId", "fullName profilePic privacy")
+      .populate("receiverId", "fullName profilePic privacy");
 
     if (!connections || connections.length === 0) {
       return res.status(404).json({
@@ -168,7 +168,7 @@ export const getConnections = async (req, res) => {
     }
 
     const data = connections.map((req) =>
-      req.senderId._id === userId ? req.receiverId : req.senderId
+      req.senderId._id.toString() === userId.toString() ? req.receiverId : req.senderId
     );
 
     return res.status(200).json({
