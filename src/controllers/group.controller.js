@@ -47,7 +47,7 @@ export const createGroup = async (req, res) => {
 
 export const addMember = async (req, res) => {
   try {
-    const { userIds: membersToAdd, groupId } = req.body;
+    const { userId: memberToAdd, groupId } = req.body;
 
     if (!mongoose.isValidObjectId(groupId)) {
       return res
@@ -55,7 +55,10 @@ export const addMember = async (req, res) => {
         .json({ status: "error", message: "Invalid group ID" });
     }
 
-    const group = await Group.findById(groupId);
+    const group = await Group.findById(groupId).populate(
+      "members",
+      "fullName profilePic"
+    );
     if (!group) {
       return res
         .status(404)
@@ -72,60 +75,35 @@ export const addMember = async (req, res) => {
       });
     }
 
-    if (membersToAdd.includes(req.user._id)) {
+    if (memberToAdd.toString() === req.user._id.toString()) {
       return res
         .status(400)
         .json({ status: "error", message: "Cannot add yourself to the group" });
     }
 
-    const groupMemberSet = new Set(group.members.map((m) => m.toString()));
-
-    const newMembers = [];
-    for (const memberId of membersToAdd) {
-      if (groupMemberSet.has(memberId)) {
-        continue;
-      }
-
-      const user = await User.findById(memberId);
-      if (!user) {
-        return res
-          .status(400)
-          .json({ status: "error", message: `User not found: ${memberId}` });
-      }
-
-      if (user.privacy) {
-        return res.status(400).json({
-          status: "error",
-          message: `Cannot add private user: ${user._id}`,
-        });
-      }
-
-      newMembers.push(user);
-    }
-
-    if (newMembers.length === 0) {
+    const user = await User.findById(memberToAdd);
+    if (!user) {
       return res
         .status(400)
-        .json({ status: "error", message: "No new members to add" });
+        .json({ status: "error", message: `User not found: ${memberToAdd}` });
+    }
+    if (user.privacy) {
+      return res.status(400).json({
+        status: "error",
+        message: `Cannot add private user`,
+      });
     }
 
-    for (const user of newMembers) {
-      user.groups = user.groups ? [...user.groups, groupId] : [groupId];
-      await user.save();
-    }
+    user.groups = user.groups ? [...user.groups, groupId] : [groupId];
+    await user.save();
 
-    group.members.push(...newMembers.map((user) => user._id));
+    group.members.push(memberToAdd);
     await group.save();
-
-    const populatedGroup = await Group.findById(groupId).populate(
-      "members",
-      "fullName profilePic"
-    );
 
     return res.status(200).json({
       status: "success",
       message: "Users added successfully",
-      data: populatedGroup,
+      data: group,
     });
   } catch (error) {
     console.error("Error adding members ->", error);
@@ -596,18 +574,22 @@ export const getNewGroups = async (req, res) => {
 export const getConnectionsToAddGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const {connections} = req.query;
+    const { connections } = req.query;
     const parsedConnections = JSON.parse(connections);
     const user = req.user;
 
     if (!mongoose.isValidObjectId(groupId)) {
       console.log(groupId);
-      return res.status(400).json({ status: "error", message: "Invalid group ID" });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid group ID" });
     }
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(400).json({ status: "error", message: "Group not found" });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Group not found" });
     }
 
     if (!group.members.includes(user._id)) {
@@ -657,4 +639,3 @@ export const getConnectionsToAddGroup = async (req, res) => {
     });
   }
 };
-
