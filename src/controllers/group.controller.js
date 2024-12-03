@@ -47,72 +47,91 @@ export const createGroup = async (req, res) => {
 
 export const addMember = async (req, res) => {
   try {
-    const { userId: memberToAdd, groupId } = req.body;
+    const { userIds: membersToAdd, groupId } = req.body;
+
     if (!mongoose.isValidObjectId(groupId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid group id",
-      });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid group ID" });
     }
-    if (memberToAdd.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        status: "error",
-        message:
-          "Cannot add yourself to the group,instead you can create new  group",
-      });
-    }
-    const user = await User.findById(memberToAdd);
-    if (!user) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid User id - User not found",
-      });
-    }
-    if (user.privacy === true) {
-      return res.status(400).json({
-        status: "error",
-        message: "Cannot add private users to the group",
-      });
-    }
+
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid group id - Group not found",
-      });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Group not found" });
     }
+
     if (
       group.admin.toString() !== req.user._id.toString() &&
       group.visibility === "private"
     ) {
-      return res.status(400).json({
+      return res.status(403).json({
         status: "error",
-        message: "only Admins can add the members to private group",
+        message: "Only admins can add members to private groups",
       });
     }
-    if (group.members.includes(memberToAdd)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Already a group member",
-      });
+
+    if (membersToAdd.includes(req.user._id)) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Cannot add yourself to the group" });
     }
-    group.members = [...group.members, memberToAdd];
-    user.groups = user.groups ? [...user.groups, groupId] : [groupId];
-    await user.save();
+
+    const groupMemberSet = new Set(group.members.map((m) => m.toString()));
+
+    const newMembers = [];
+    for (const memberId of membersToAdd) {
+      if (groupMemberSet.has(memberId)) {
+        continue;
+      }
+
+      const user = await User.findById(memberId);
+      if (!user) {
+        return res
+          .status(400)
+          .json({ status: "error", message: `User not found: ${memberId}` });
+      }
+
+      if (user.privacy) {
+        return res.status(400).json({
+          status: "error",
+          message: `Cannot add private user: ${user._id}`,
+        });
+      }
+
+      newMembers.push(user);
+    }
+
+    if (newMembers.length === 0) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "No new members to add" });
+    }
+
+    for (const user of newMembers) {
+      user.groups = user.groups ? [...user.groups, groupId] : [groupId];
+      await user.save();
+    }
+
+    group.members.push(...newMembers.map((user) => user._id));
     await group.save();
-    const data = await newGroup.populate("members", "fullName profilePic");
+
+    const populatedGroup = await Group.findById(groupId).populate(
+      "members",
+      "fullName profilePic"
+    );
 
     return res.status(200).json({
       status: "success",
-      message: "User added successfully",
-      data,
+      message: "Users added successfully",
+      data: populatedGroup,
     });
   } catch (error) {
-    console.log("Error in adding member ->", error?.message);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    console.error("Error adding members ->", error.message);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 
@@ -338,8 +357,8 @@ export const joinGroup = async (req, res) => {
       path: "groups",
       select: "name members photo",
       populate: {
-        path: "members", 
-        select: "fullName profilePic", 
+        path: "members",
+        select: "fullName profilePic",
       },
     });
 
@@ -567,6 +586,53 @@ export const getNewGroups = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in explorin new groups ->", error?.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getConnectionsToAddGroup = async (req, res) => {
+  try {
+    const { groupId, connections } = req.body;
+    const user = req.user;
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid group ID" });
+    }
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Group not found" });
+    }
+    if (
+      group.admin.toString() !== user._id.toString() ||
+      group.visibility !== "public"
+    ) {
+      return res.satus(401).json({
+        status: "error",
+        message: "Only admin can add members in private groups",
+      });
+    }
+    if (!connections || connections.length === 0) {
+      return res.satus(400).json({
+        status: "error",
+        message: "No connections to add members to group",
+      });
+    }
+    const newUsers = connections.map(
+      (user) => !group.members.includes(user._id)
+    );
+    return res.status(200).json({
+      status: "success",
+      message: "New users fetched successfully for adding to group",
+      data: newUsers,
+    });
+  } catch (error) {
+    console.log("Error in finding connections for group ->", error?.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",

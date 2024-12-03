@@ -5,6 +5,7 @@ import {
   createGroup,
   deleteGroup,
   exitGroup,
+  getConnectionsToAddGroup,
   getGroups,
   getNewGroups,
   joinGroup,
@@ -34,5 +35,7 @@ router.patch("/updateGroup/:groupId", protectRoute, updateGroup);
 router.put("/updateGroupPhoto/:groupId", protectRoute, updateDp);
 
 router.get("/exploreGroups", protectRoute, getNewGroups);
+
+router.get("/connectionForGroup",protectRoute,getConnectionsToAddGroup);
 
 export default router;
