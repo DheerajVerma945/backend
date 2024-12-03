@@ -36,6 +36,6 @@ router.put("/updateGroupPhoto/:groupId", protectRoute, updateDp);
 
 router.get("/exploreGroups", protectRoute, getNewGroups);
 
-router.get("/connectionForGroup",protectRoute,getConnectionsToAddGroup);
+router.get("/connectionForGroup/:groupId",protectRoute,getConnectionsToAddGroup);
 
 export default router;

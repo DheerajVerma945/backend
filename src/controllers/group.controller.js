@@ -595,10 +595,13 @@ export const getNewGroups = async (req, res) => {
 
 export const getConnectionsToAddGroup = async (req, res) => {
   try {
-    const { groupId, connections } = req.body;
+    const { groupId } = req.params;
+    const {connections} = req.query;
+    const parsedConnections = JSON.parse(connections);
     const user = req.user;
 
     if (!mongoose.isValidObjectId(groupId)) {
+      console.log(groupId);
       return res.status(400).json({ status: "error", message: "Invalid group ID" });
     }
 
@@ -624,7 +627,7 @@ export const getConnectionsToAddGroup = async (req, res) => {
       });
     }
 
-    if (!connections || connections.length === 0) {
+    if (!parsedConnections || parsedConnections.length === 0) {
       return res.status(400).json({
         status: "error",
         message: "No connections to add members to group",
@@ -632,7 +635,7 @@ export const getConnectionsToAddGroup = async (req, res) => {
     }
 
     const validConnections = [];
-    for (const connection of connections) {
+    for (const connection of parsedConnections) {
       if (!group.members.includes(connection._id)) {
         const user = await User.findById(connection._id);
         if (user) {
