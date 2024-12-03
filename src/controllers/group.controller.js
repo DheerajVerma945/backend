@@ -100,7 +100,7 @@ export const addMember = async (req, res) => {
     group.members.push(memberToAdd);
     await group.save();
 
-    await group.populate("members","fullName profilePic")
+    await group.populate("members", "fullName profilePic");
 
     return res.status(200).json({
       status: "success",
@@ -258,6 +258,11 @@ export const exitGroup = async (req, res) => {
         message: "Admin cannot leave the group, they can delete instead.",
       });
     }
+    await GroupRequest.findOneAndDelete({
+      $or: [{ senderId: user._id }, { receiverId: user._id }],
+      groupId: group._id,
+      status: "accepted",
+    });
 
     group.members = group.members.filter(
       (member) => member._id.toString() !== req.user._id.toString()
@@ -268,7 +273,7 @@ export const exitGroup = async (req, res) => {
 
     await group.save();
     await user.save();
-    const data = await user
+    const data = User.findById(user._id)
       .populate("groups", "name photo")
       .populate("groups.members", "fullName profilePic");
 
