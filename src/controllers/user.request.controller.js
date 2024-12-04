@@ -266,7 +266,7 @@ export const searchUser = async (req, res) => {
         message: "User not found via username",
       });
     }
-    const exisitingRequest = await UserRequest.find({
+    const exisitingRequest = await UserRequest.findOne({
       $or: [{ senderId: req.user._id }, { receiverId: req.user._id }],
     });
     if (exisitingRequest) {

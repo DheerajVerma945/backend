@@ -266,19 +266,24 @@ export const exitGroup = async (req, res) => {
     group.members = group.members.filter(
       (member) => member._id.toString() !== user._id.toString()
     );
-    user.groups = user.groups.filter((group) => group.toString() !== groupId);
+    user.groups = user.groups.filter(
+      (group) => group._id.toString() !== groupId
+    );
 
     await group.save();
     await user.save();
 
-    const data = await User.findById(user._id)
-      .populate("groups", "name photo")
-      .populate("groups.members", "fullName profilePic");
+    const groupIds = user.groups;
+    const newGroups = await Group.find({
+      _id: { $in: groupIds },
+    }).populate("members", "fullName profilePic");
+
+
 
     return res.status(200).json({
       status: "success",
       message: "Group exited successfully",
-      data,
+      data:newGroups,
     });
   } catch (error) {
     console.log("Error while exiting the group ->", error.message);
