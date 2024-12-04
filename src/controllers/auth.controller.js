@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import cloudinary from "../lib/cloudinary.js";
 import nodemailer from "nodemailer";
-import UserRequest from "../models/user.request.model.js";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
