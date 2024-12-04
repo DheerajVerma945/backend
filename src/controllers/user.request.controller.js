@@ -168,7 +168,9 @@ export const getConnections = async (req, res) => {
     }
 
     const data = connections.map((req) =>
-      req.senderId._id.toString() === userId.toString() ? req.receiverId : req.senderId
+      req.senderId._id.toString() === userId.toString()
+        ? req.receiverId
+        : req.senderId
     );
 
     return res.status(200).json({
@@ -193,14 +195,18 @@ export const exploreUsers = async (req, res) => {
       $or: [{ senderId: userId }, { receiverId: userId }],
     });
 
-    const hiddenUsers = existingEngagement?.reduce((acc, req) => {
-      acc.push(req.senderId.toString() === userId.toString() ? req.receiverId : req.senderId);
-      return acc;
-    }, []) || [];
-
+    const hiddenUsers =
+      existingEngagement?.reduce((acc, req) => {
+        acc.push(
+          req.senderId.toString() === userId.toString()
+            ? req.receiverId
+            : req.senderId
+        );
+        return acc;
+      }, []) || [];
 
     const newUsers = await User.find({
-      _id: { $nin: [...hiddenUsers,userId] },
+      _id: { $nin: [...hiddenUsers, userId] },
     }).select("fullName profilePic");
 
     if (!newUsers.length) {
@@ -224,33 +230,65 @@ export const exploreUsers = async (req, res) => {
   }
 };
 
-
 export const searchUser = async (req, res) => {
+  const { username } = req.params;
   try {
-    const { username } = req.params;
+    if (!username) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username is required",
+      });
+    }
     if (username === req.user.username) {
       return res.status(400).json({
         status: "error",
         message: "You cannot search yourself.",
       });
     }
-    const user = await User.findOne({ username });
-    if (!user) {
+    if (username.length > 18) {
       return res.status(400).json({
         status: "error",
-        message: "User not found, please provide correct username",
+        message: "Username cant be more than 18 characters",
       });
     }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Username contains invalid characters",
+      });
+    }
+    const user = await User.findOne({ username }).select(
+      "username profilePic fullName"
+    );
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found via username",
+      });
+    }
+    const exisitingRequest = await UserRequest.find({
+      $or: [{ senderId: req.user._id }, { receiverId: req.user._id }],
+    });
+    if (exisitingRequest) {
+      return res.status(200).json({
+        status: "success",
+        message: "User fetched successfully",
+        data: user,
+        req: exisitingRequest,
+      });
+    }
+
     return res.status(200).json({
       status: "success",
       message: "User fetched successfully",
       data: user,
+      req: null,
     });
   } catch (error) {
-    console.log("Error in searching user with username ->", error?.message);
+    console.log("Error while fetching user via username ->", error);
     return res.status(500).json({
       status: "error",
-      message: "internal server error",
+      message: "Internal server error",
     });
   }
 };

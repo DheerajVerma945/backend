@@ -11,7 +11,6 @@ import {
   sendResetMail,
   verifyMailTokenAndChangePass,
   validateUserName,
-  searchUser,
   updatePrivacy,
 } from "../controllers/auth.controller.js";
 
@@ -32,8 +31,6 @@ router.post("/forgot-password/mail", sendResetMail);
 router.post("/forgot-password/verify", verifyMailTokenAndChangePass);
 
 router.get("/validateUserName/:username", validateUserName);
-
-router.get("/search/:username", protectRoute, searchUser);
 
 router.put("/updatePrivacy", protectRoute, updatePrivacy);
 
