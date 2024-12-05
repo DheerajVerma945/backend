@@ -45,7 +45,7 @@ export const sendRequest = async (req, res) => {
       "Error while sending user connection request->",
       error?.message
     );
-    return res.status(450).json({
+    return res.status(500).json({
       status: "error",
       message: "Internal server error",
     });
