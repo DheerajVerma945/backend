@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import Group from "../models/group.asign.model.js";
-import cloudinary from "../lib/cloudinary.js"
+import cloudinary from "../lib/cloudinary.js";
 import GroupChat from "../models/group.message.model.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -43,12 +44,17 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
-    const data = await newMessage.populate("senderId","fullName profilePic")
 
-    // const receiverSocketId = getReceiverSocketId(receiverId);
-    // if (receiverSocketId) {
-    //   io.to(receiverSocketId).emit("newMessage", newMessage);
-    // }
+    const data = await newMessage.populate("senderId", "fullName profilePic");
+
+    const groupMembers = group.members;
+
+    groupMembers.forEach((memberId) => {
+      const socketId = getReceiverSocketId(memberId._id.toString());
+      if (socketId) {
+        io.to(socketId).emit("newGroupMessage", data);
+      }
+    });
     return res.status(200).json({
       status: "success",
       message: "Message saved successfully",
