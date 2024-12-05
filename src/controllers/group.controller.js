@@ -200,6 +200,10 @@ export const removeMember = async (req, res) => {
       (id) => id.toString() !== memberToRemove.toString()
     );
 
+    await GroupRequest.findOneAndDelete({
+      $or: [{ senderId: user._id }, { receiverId: user._id }],
+    });
+
     await user.save();
     await group.save();
     const data = await group.populate("members", "fullName profilePic");
@@ -260,7 +264,6 @@ export const exitGroup = async (req, res) => {
     await GroupRequest.findOneAndDelete({
       groupId,
       $or: [{ senderId: user._id }, { receiverId: user._id }],
-      status: "accepted",
     });
 
     group.members = group.members.filter(
@@ -278,12 +281,10 @@ export const exitGroup = async (req, res) => {
       _id: { $in: groupIds },
     }).populate("members", "fullName profilePic");
 
-
-
     return res.status(200).json({
       status: "success",
       message: "Group exited successfully",
-      data:newGroups,
+      data: newGroups,
     });
   } catch (error) {
     console.log("Error while exiting the group ->", error.message);
