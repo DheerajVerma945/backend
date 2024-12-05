@@ -281,8 +281,6 @@ export const reviewInviteByAdmin = async (req, res) => {
       });
     }
     request.status = status;
-    console.log(group);
-    console.log(request);
     const newMember = await User.findById(request.senderId._id);
 
     if (status === "accepted") {
