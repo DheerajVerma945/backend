@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import UserRequest from "../models/user.request.model.js";
+import Message from "../models/message.model.js";
 
 export const sendRequest = async (req, res) => {
   try {
@@ -122,8 +123,6 @@ export const reviewRequest = async (req, res) => {
 export const removeConnection = async (req, res) => {
   try {
     const { userId } = req.body;
-    console.log(req);
-    console.log(userId)
     const currUserId = req.user._id;
 
     const request = await UserRequest.findOneAndDelete({
@@ -133,6 +132,14 @@ export const removeConnection = async (req, res) => {
       ],
       status: "accepted",
     });
+
+    await Message.deleteMany({
+      $or: [
+        { senderId: userId, receiverId: currUserId },
+        { senderId: currUserId, receiverId: userId },
+      ],
+    });
+
     if (!request) {
       return res.status(400).json({
         status: "error",
