@@ -10,7 +10,7 @@ router.get("/fetch",protectRoute,getRequests);
 
 router.post("/review/:status",protectRoute,reviewRequest);
 
-router.delete("/remove",protectRoute,removeConnection);
+router.post("/remove",protectRoute,removeConnection);
 
 router.get("/exploreUsers",protectRoute,exploreUsers);
 

@@ -122,6 +122,8 @@ export const reviewRequest = async (req, res) => {
 export const removeConnection = async (req, res) => {
   try {
     const { userId } = req.body;
+    console.log(req);
+    console.log(userId)
     const currUserId = req.user._id;
 
     const request = await UserRequest.findOneAndDelete({
