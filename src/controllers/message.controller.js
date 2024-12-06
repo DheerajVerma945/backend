@@ -28,7 +28,7 @@ export const getMessages = async (req, res) => {
         message: "No messages found",
       });
     }
-    await Message.updateMany(
+    const updatedMsg =await Message.updateMany(
       {
         receiverId: myId,
         isRead: false,
