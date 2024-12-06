@@ -28,13 +28,14 @@ export const getMessages = async (req, res) => {
         message: "No messages found",
       });
     }
-    const updatedMsg =await Message.updateMany(
-      {
-        receiverId: myId,
-        isRead: false,
-      },
+    await Message.updateMany(
+      { senderId: freindId, receiverId: myId, isRead: false },
       { isRead: true }
     );
+    const receiverSocketId = getReceiverSocketId(freindId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("updateRead");
+    }
     return res.status(200).json({
       status: "success",
       message: "Messages fetched successfully",
@@ -48,6 +49,10 @@ export const getMessages = async (req, res) => {
     });
   }
 };
+
+export const updateRealtimeIsRead = async(req,res)=>{
+  
+}
 
 export const sendMessage = async (req, res) => {
   try {
