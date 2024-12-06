@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import Message from "../models/message.model.js";
+import GroupChat from "../models/group.message.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +41,16 @@ io.on("connection", (socket) => {
 
     try {
       await Message.findByIdAndUpdate(messageId, { $set: { isRead: true } });
+    } catch (err) {
+      console.error("Failed to update messages in DB:", err);
+    }
+  });
+
+  socket.on("updateLastGroupMessageIsRead", async ({ messageId, userId }) => {
+    try {
+      await GroupChat.findByIdAndUpdate(messageId, {
+        $addToSet: { isRead: userId },
+      });
     } catch (err) {
       console.error("Failed to update messages in DB:", err);
     }

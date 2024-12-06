@@ -103,7 +103,11 @@ export const getMessages = async (req, res) => {
       });
     }
     await GroupChat.updateMany(
-      { groupId, isRead: { $nin: [req.user._id] } },
+      {
+        groupId,
+        senderId: { $ne: req.user._id },
+        isRead: { $nin: [req.user._id] },
+      },
       { $addToSet: { isRead: req.user._id } }
     );
 
@@ -135,6 +139,7 @@ export const getUnreadCount = async (req, res) => {
 
     const unreadCount = await GroupChat.countDocuments({
       groupId,
+      senderId: { $ne: userId },
       isRead: { $nin: [userId] },
     });
 
