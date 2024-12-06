@@ -18,11 +18,16 @@ const groupMessageSchema = mongoose.Schema(
     image: {
       type: String,
     },
+    isRead: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
   },
   {
     timestamps: true,
   }
 );
-const GroupChat = mongoose.model("GroupChat",groupMessageSchema);
+const GroupChat = mongoose.model("GroupChat", groupMessageSchema);
 
 export default GroupChat;

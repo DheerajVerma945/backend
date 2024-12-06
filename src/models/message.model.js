@@ -18,9 +18,13 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-const Message = mongoose.model("Message",messageSchema);
-export default Message; 
+const Message = mongoose.model("Message", messageSchema);
+export default Message;

@@ -102,6 +102,11 @@ export const getMessages = async (req, res) => {
         message: "No Messages in group yet",
       });
     }
+    await GroupChat.updateMany(
+      { groupId, isRead: { $nin: [req.user._id] } },
+      { $addToSet: { isRead: req.user._id } }
+    );
+
     return res.status(200).json({
       status: "success",
       message: "Group messages fethced successfully",
@@ -109,6 +114,37 @@ export const getMessages = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.isValidObjectId(groupId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid group id",
+      });
+    }
+
+    const unreadCount = await GroupChat.countDocuments({
+      groupId,
+      isRead: { $nin: [userId] },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Unread count fetched successfully",
+      data: unreadCount,
+    });
+  } catch (error) {
+    console.log("Error in getting unreadMessageCount ->", error);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
