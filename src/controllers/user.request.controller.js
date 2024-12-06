@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import UserRequest from "../models/user.request.model.js";
 import Message from "../models/message.model.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const sendRequest = async (req, res) => {
   try {
@@ -36,16 +37,28 @@ export const sendRequest = async (req, res) => {
       receiverId: userId,
     });
     await newRequest.save();
+
+    const receiverSocketId = getReceiverSocketId(userId);
+    if (receiverSocketId) {
+      const data = {
+        _id: newRequest._id,
+        senderId: {
+          _id: currUser._id,
+          fullName: currUser.fullName,
+          profilePic: currUser.profilePic,
+        },
+        receiverId: userId,
+        status: "pending",
+      };
+      io.to(receiverSocketId).emit("newUserRequest", data);
+    }
     return res.status(201).json({
       status: "success",
       message: "Connection request sent successfully",
       data: newRequest,
     });
   } catch (error) {
-    console.log(
-      "Error while sending user connection request->",
-      error?.message
-    );
+    console.log("Error while sending user connection request->", error);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -106,13 +119,26 @@ export const reviewRequest = async (req, res) => {
     }
     request.status = status;
     await request.save();
+
+    if (status === "accepted") {
+      const receiverSocketId = getReceiverSocketId(request.senderId._id);
+      if (receiverSocketId) {
+        const data = {
+          _id: req.user._id,
+          fullName: req.user.fullName,
+          profilePic: req.user.profilePic,
+          privacy: req.user.privacy,
+        };
+        io.to(receiverSocketId).emit("newConnection", data);
+      }
+    }
     return res.status(200).json({
       status: "success",
       message: `Request ${status} successsfully`,
       data: request,
     });
   } catch (error) {
-    console.log("Error in reviewing user request ->", error?.message);
+    console.log("Error in reviewing user request ->", error);
     return res.status(500).json({
       status: "error",
       message: "Internal serrver error",
@@ -132,6 +158,12 @@ export const removeConnection = async (req, res) => {
       ],
       status: "accepted",
     });
+    if (!request) {
+      return res.status(400).json({
+        status: "error",
+        message: "User connection not found to remove",
+      });
+    }
 
     await Message.deleteMany({
       $or: [
@@ -140,18 +172,18 @@ export const removeConnection = async (req, res) => {
       ],
     });
 
-    if (!request) {
-      return res.status(400).json({
-        status: "error",
-        message: "User connection not found to remove",
-      });
+    const receiverSocketId = getReceiverSocketId(userId);
+    if(receiverSocketId){
+      io.to(receiverSocketId).emit("removedConnection",currUserId);
     }
+
+    
     return res.status(200).json({
       status: "success",
       message: "Connection removed successfully",
     });
   } catch (error) {
-    console.log("Error in removing user connection->", error?.message);
+    console.log("Error in removing user connection->", error);
     return res.status(500).json({
       status: "error",
       message: "Internal serrver error",
