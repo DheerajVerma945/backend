@@ -3,6 +3,7 @@ import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId } from "../lib/socket.js";
 import { io } from "../lib/socket.js";
+import mongoose from "mongoose";
 
 export const getMessages = async (req, res) => {
   try {
