@@ -76,7 +76,7 @@ export const signup = async (req, res) => {
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <img 
-              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1733583250/BaatCheet/ldn8ikrtjvbs8suhgz62.png" 
               alt="Chit-Chat Logo" 
               style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
             />
@@ -138,7 +138,7 @@ export const login = async (req, res) => {
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <img 
-              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1733583250/BaatCheet/ldn8ikrtjvbs8suhgz62.png" 
               alt="Chit-Chat Logo" 
               style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
             />
@@ -328,7 +328,7 @@ export const sendResetMail = async (req, res) => {
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <img 
-              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1732540497/Screenshot_2024-11-25_184428_vbmvpm.png" 
+              src="https://res.cloudinary.com/dzitsseoz/image/upload/v1733583250/BaatCheet/ldn8ikrtjvbs8suhgz62.png" 
               alt="Chit-Chat Logo" 
               style="width: 120px; height: 120px; object-fit:cover; border-radius: 50%;"
             />
