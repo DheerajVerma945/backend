@@ -82,9 +82,21 @@ export const addMember = async (req, res) => {
         .json({ status: "error", message: "Cannot add yourself to the group" });
     }
 
-    const user = await User.findById(memberToAdd).populate(
-      "fullName profilePic privacy"
+    const isMember = group.members.some(
+      (member) => member._id.toString() === memberToAdd.toString()
     );
+
+    if (isMember) {
+      return res.status(400).json({
+        status: "error",
+        message: "Already a member fo group ",
+      });
+    }
+
+    const user = await User.findById(memberToAdd).select(
+      "fullName profilePic privacy groups"
+    );
+    console.log(user);
     if (!user) {
       return res
         .status(400)
@@ -113,7 +125,7 @@ export const addMember = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        it.to(memberSocketId).emit("newMember", {groupId,user});
+        io.to(memberSocketId).emit("newMember", { groupId, user });
       }
     }
 
@@ -229,7 +241,10 @@ export const removeMember = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).emit("updatedMembers", {groupId,memberToRemove});
+        io.to(memberSocketId).emit("updatedMembers", {
+          groupId,
+          memberToRemove,
+        });
       }
     }
     const data = await group.populate("members", "fullName profilePic");
@@ -310,7 +325,10 @@ export const exitGroup = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).amit("updatedMembers", {groupId,userId:user._id});
+        io.to(memberSocketId).emit("updatedMembers", {
+          groupId,
+          userId: user._id,
+        });
       }
     }
 
@@ -375,6 +393,7 @@ export const joinGroup = async (req, res) => {
     await group.save();
     await user.save();
 
+    const userData = {fullName:user.fullName,profilePic:user.profilePic,_id:user._id}
     const updatedUser = await user.populate({
       path: "groups",
       select: "name members photo",
@@ -386,7 +405,7 @@ export const joinGroup = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).amit("newMember",{groupId, user});
+        io.to(memberSocketId).emit("newMember", { groupId, user:userData });
       }
     }
 
@@ -447,7 +466,7 @@ export const deleteGroup = async (req, res) => {
     for (const member of groupMembers) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).amit("removedGroup", groupId);
+        io.to(memberSocketId).emit("removedGroup", groupId);
       }
     }
 
@@ -512,7 +531,7 @@ export const updateGroup = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).amit("updatedGroupData",{groupId,group});
+        io.to(memberSocketId).emit("updatedGroupData", { groupId, group });
       }
     }
     return res.status(200).json({
@@ -573,7 +592,7 @@ export const updateDp = async (req, res) => {
     for (const member of group.members) {
       const memberSocketId = getReceiverSocketId(member._id);
       if (memberSocketId) {
-        io.to(memberSocketId).amit("updatedGroupData",{groupId,group});
+        io.to(memberSocketId).emit("updatedGroupData", { groupId, group });
       }
     }
     return res.status(200).json({

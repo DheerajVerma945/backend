@@ -302,7 +302,9 @@ export const reviewInviteByAdmin = async (req, res) => {
       });
     }
     request.status = status;
-    const newMember = await User.findById(request.senderId._id);
+    const newMember = await User.findById(request.senderId._id).select(
+      "groups fullName profilePic"
+    );
 
     if (status === "accepted") {
       group.members = [...group.members, request.senderId._id];
@@ -317,6 +319,17 @@ export const reviewInviteByAdmin = async (req, res) => {
       const recieverSocketId = getReceiverSocketId(newMember._id);
       if (recieverSocketId) {
         io.to(recieverSocketId).emit("newGroup", group);
+      }
+      for (const member of group.members) {
+        const memberSocketId = getReceiverSocketId(member._id);
+        const user = {
+          _id: newMember._id,
+          fullName: newMember.fullName,
+          profilePic: newMember.profilePic,
+        };
+        if (memberSocketId) {
+          io.to(memberSocketId).emit("newMember", { groupId, user });
+        }
       }
     }
     return res.status(200).json({
@@ -393,6 +406,17 @@ export const reviewInviteByUser = async (req, res) => {
       await user.save();
       await group.save();
       await request.save();
+      for (const member of group.members) {
+        const memberSocketId = getReceiverSocketId(member._id);
+        const user = {
+          _id: user._id,
+          fullName: user.fullName,
+          profilePic: user.profilePic,
+        };
+        if (memberSocketId) {
+          io.to(memberSocketId).emit("newMember", { groupId, user });
+        }
+      }
       return res.status(200).json({
         status: "success",
         message: "Request accepted successfully",
