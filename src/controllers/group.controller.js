@@ -82,7 +82,9 @@ export const addMember = async (req, res) => {
         .json({ status: "error", message: "Cannot add yourself to the group" });
     }
 
-    const user = await User.findById(memberToAdd);
+    const user = await User.findById(memberToAdd).populate(
+      "fullName profilePic privacy"
+    );
     if (!user) {
       return res
         .status(400)
@@ -102,6 +104,18 @@ export const addMember = async (req, res) => {
     await group.save();
 
     await group.populate("members", "fullName profilePic");
+
+    const recieverSocketId = getReceiverSocketId(user._id);
+    if (recieverSocketId) {
+      io.to(recieverSocketId).emit("newGroup", group);
+    }
+
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        it.to(memberSocketId).emit("newMember", {groupId,user});
+      }
+    }
 
     return res.status(200).json({
       status: "success",
@@ -211,6 +225,13 @@ export const removeMember = async (req, res) => {
     if (recieverSocketId) {
       io.to(recieverSocketId).emit("removedGroup", groupId);
     }
+
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).emit("updatedMembers", {groupId,memberToRemove});
+      }
+    }
     const data = await group.populate("members", "fullName profilePic");
     return res.status(200).json({
       status: "success",
@@ -286,6 +307,13 @@ export const exitGroup = async (req, res) => {
       _id: { $in: groupIds },
     }).populate("members", "fullName profilePic");
 
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).amit("updatedMembers", {groupId,userId:user._id});
+      }
+    }
+
     return res.status(200).json({
       status: "success",
       message: "Group exited successfully",
@@ -355,6 +383,12 @@ export const joinGroup = async (req, res) => {
         select: "fullName profilePic",
       },
     });
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).amit("newMember",{groupId, user});
+      }
+    }
 
     return res.status(200).json({
       status: "success",
@@ -408,8 +442,14 @@ export const deleteGroup = async (req, res) => {
     }
 
     await GroupChat.deleteMany({ groupId });
-
+    const groupMembers = group.members;
     await Group.findByIdAndDelete(groupId);
+    for (const member of groupMembers) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).amit("removedGroup", groupId);
+      }
+    }
 
     return res.status(200).json({
       status: "success",
@@ -469,6 +509,12 @@ export const updateGroup = async (req, res) => {
       });
     }
     await group.save();
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).amit("updatedGroupData",{groupId,group});
+      }
+    }
     return res.status(200).json({
       status: "success",
       message: "Group info updated successfully",
@@ -524,6 +570,12 @@ export const updateDp = async (req, res) => {
       group.photo = imageUrl;
     }
     await group.save();
+    for (const member of group.members) {
+      const memberSocketId = getReceiverSocketId(member._id);
+      if (memberSocketId) {
+        io.to(memberSocketId).amit("updatedGroupData",{groupId,group});
+      }
+    }
     return res.status(200).json({
       status: "success",
       message: "Image updated successfully",
