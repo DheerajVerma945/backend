@@ -1,11 +1,9 @@
 import jwt from "jsonwebtoken";
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 
 export const generateMailToken = async () => {
-  return randomBytes(20).toString('hex');
+  return randomBytes(20).toString("hex");
 };
-
-
 
 export const generateToken = (userId, res) => {
   const token = jwt.sign({ userId }, process.env.JWT_KEY, {
@@ -14,10 +12,8 @@ export const generateToken = (userId, res) => {
 
   res.cookie("jwt", token, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV !== "development",
+    sameSite: "None",
+    secure: true,
   });
   return token;
 };
-
