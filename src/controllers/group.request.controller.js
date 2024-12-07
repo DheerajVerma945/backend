@@ -2,6 +2,7 @@ import mongoose, { mongo } from "mongoose";
 import Group from "../models/group.asign.model.js";
 import User from "../models/user.model.js";
 import GroupRequest from "../models/group.request.model.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const sendInviteByAdmin = async (req, res) => {
   try {
@@ -64,6 +65,26 @@ export const sendInviteByAdmin = async (req, res) => {
 
     const newGroupReq = new GroupRequest({ senderId, receiverId, groupId });
     await newGroupReq.save();
+
+    const recieverSocketId = getReceiverSocketId(receiverId);
+    if (recieverSocketId) {
+      const data = {
+        _id: newGroupReq._id,
+        senderId: {
+          _id: senderId,
+          fullName: req.user.fullName,
+          profilePic: req.user.profilePic,
+        },
+        receiverId,
+        groupId: {
+          name: group.name,
+          _id: group._id,
+          photo: group.photo,
+        },
+        status: "pending",
+      };
+      io.to(recieverSocketId).emit("newGroupRequest", data);
+    }
 
     return res.status(201).json({
       status: "success",
@@ -291,6 +312,13 @@ export const reviewInviteByAdmin = async (req, res) => {
     await newMember.save();
     await request.save();
     await group.save();
+
+    if (status === "accepted") {
+      const recieverSocketId = getReceiverSocketId(newMember._id);
+      if (recieverSocketId) {
+        io.to(recieverSocketId).emit("newGroup", group);
+      }
+    }
     return res.status(200).json({
       status: "success",
       message: `Request ${status} successfully`,

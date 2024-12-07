@@ -4,6 +4,7 @@ import GroupChat from "../models/group.message.model.js";
 import User from "../models/user.model.js";
 import GroupRequest from "../models/group.request.model.js";
 import mongoose from "mongoose";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const createGroup = async (req, res) => {
   try {
@@ -206,6 +207,10 @@ export const removeMember = async (req, res) => {
 
     await user.save();
     await group.save();
+    const recieverSocketId = getReceiverSocketId(user._id);
+    if (recieverSocketId) {
+      io.to(recieverSocketId).emit("removedGroup", groupId);
+    }
     const data = await group.populate("members", "fullName profilePic");
     return res.status(200).json({
       status: "success",
@@ -632,7 +637,13 @@ export const getConnectionsToAddGroup = async (req, res) => {
       if (!group.members.includes(connection._id)) {
         const user = await User.findById(connection._id);
         if (user) {
-          validConnections.push(connection);
+          const existingRequest = await GroupRequest.findOne({
+            $or: [{ senderId: user._id }, { receiverId: user._id }],
+            groupId: group._id,
+          });
+          if (!existingRequest) {
+            validConnections.push(connection);
+          }
         }
       }
     }
