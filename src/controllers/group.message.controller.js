@@ -69,32 +69,13 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-export const getMessages = async (req, res) => {
+export const getAllMessages = async (req, res) => {
   try {
-    const { groupId } = req.params;
-    if (!mongoose.isValidObjectId(groupId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid group id",
-      });
-    }
-    const group = await Group.findById(groupId);
-    if (!group) {
-      return res.status(400).json({
-        status: "error",
-        message: "Group does not exist",
-      });
-    }
-    if (!group.members.includes(req.user._id)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Cannot get the messages of group that are not joined",
-      });
-    }
-    const messages = await GroupChat.find({ groupId }).populate(
-      "senderId",
-      "fullName profilePic"
-    );
+    const groupIds = req.user.groups.map((g) => g._id);
+
+    const messages = await GroupChat.find({
+      groupId: { $in: groupIds },
+    }).populate("senderId", "fullName profilePic");
 
     if (!messages) {
       return res.status(404).json({
@@ -102,14 +83,6 @@ export const getMessages = async (req, res) => {
         message: "No Messages in group yet",
       });
     }
-    await GroupChat.updateMany(
-      {
-        groupId,
-        senderId: { $ne: req.user._id },
-        isRead: { $nin: [req.user._id] },
-      },
-      { $addToSet: { isRead: req.user._id } }
-    );
 
     return res.status(200).json({
       status: "success",
@@ -125,34 +98,23 @@ export const getMessages = async (req, res) => {
   }
 };
 
-export const getUnreadCount = async (req, res) => {
-  try {
-    const { groupId } = req.params;
-    const userId = req.user._id;
+export const updateGroupReadCount = async (req, res) => {
+  const { groupId } = req.body;
 
-    if (!mongoose.isValidObjectId(groupId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid group id",
-      });
+  try {
+    const groupMessages = await GroupChat.find({
+      groupId,
+      senderId: { $ne: req.user._id },
+      isRead: { $nin: [req.user._id] },
+    });
+
+    for (const message of groupMessages) {
+      message.isRead.push(req.user._id);
+      await message.save();
     }
 
-    const unreadCount = await GroupChat.countDocuments({
-      groupId,
-      senderId: { $ne: userId },
-      isRead: { $nin: [userId] },
-    });
-
-    return res.status(200).json({
-      status: "success",
-      message: "Unread count fetched successfully",
-      data: unreadCount,
-    });
+    res.status(200).send({ success: true });
   } catch (error) {
-    console.log("Error in getting unreadMessageCount ->", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    res.status(500).send({ success: false, message: error.message });
   }
 };

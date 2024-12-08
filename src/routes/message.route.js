@@ -1,17 +1,17 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import {
-  getMessages,
   sendMessage,
-  getUnreadCount,
+  getAllMessages,
+  updateUnreadCount,
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
-router.get("/:id", protectRoute, getMessages);
+router.get("/getAllMessages", protectRoute, getAllMessages);
 
 router.post("/send/:id", protectRoute, sendMessage);
 
-router.get("/unread/:senderId", protectRoute, getUnreadCount);
+router.put("/updateRead",protectRoute,updateUnreadCount)
 
 export default router;

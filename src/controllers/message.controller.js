@@ -5,22 +5,12 @@ import { getReceiverSocketId } from "../lib/socket.js";
 import { io } from "../lib/socket.js";
 import mongoose from "mongoose";
 
-export const getMessages = async (req, res) => {
+export const getAllMessages = async (req, res) => {
   try {
-    const { id: freindId } = req.params;
     const myId = req.user._id;
-    if (myId.equals(freindId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Sender and reciever id cannot be same",
-      });
-    }
 
     const messages = await Message.find({
-      $or: [
-        { senderId: myId, receiverId: freindId },
-        { senderId: freindId, receiverId: myId },
-      ],
+      $or: [{ senderId: myId }, { receiverId: myId }],
     });
     if (!messages || messages.length === 0) {
       return res.status(404).json({
@@ -28,14 +18,7 @@ export const getMessages = async (req, res) => {
         message: "No messages found",
       });
     }
-    await Message.updateMany(
-      { senderId: freindId, receiverId: myId, isRead: false },
-      { isRead: true }
-    );
-    const receiverSocketId = getReceiverSocketId(freindId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("updateRead");
-    }
+
     return res.status(200).json({
       status: "success",
       message: "Messages fetched successfully",
@@ -54,6 +37,12 @@ export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
     const { id: receiverId } = req.params;
+    if (!mongoose.isValidObjectId(receiverId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid receiver id",
+      });
+    }
     if (req.user._id.equals(receiverId)) {
       return res.status(400).json({
         status: "error",
@@ -104,32 +93,37 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-export const getUnreadCount = async (req, res) => {
+export const updateUnreadCount = async (req, res) => {
   try {
-    const { senderId } = req.params;
-    const user = req.user;
+    const { userId } = req.body;
 
-    if (!mongoose.isValidObjectId(senderId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid sender id",
-      });
+    const receiverSocketId = getReceiverSocketId(userId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("updateRead");
     }
-    const unreadCount = await Message.countDocuments({
-      senderId,
-      receiverId: user._id,
-      isRead: false,
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: userId, receiverId: req.user._id },
+        { senderId: req.user._id, receiverId: userId },
+      ],
     });
-    return res.status(200).json({
-      status: "success",
-      message: "Unread count fetched successfully",
-      data: unreadCount,
-    });
+
+    const messageIdsToUpdate = messages
+      .filter(
+        (message) => message.senderId.toString() !== req.user._id.toString()
+      )
+      .map((message) => message._id);
+
+    if (messageIdsToUpdate.length > 0) {
+      await Message.updateMany(
+        { _id: { $in: messageIdsToUpdate } },
+        { $set: { isRead: true } }
+      );
+    }
+
+    res.status(200).send({ success: true });
   } catch (error) {
-    console.log("Error in getting unreadMessageCOunt ->", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    res.status(500).send({ success: false, message: error.message });
   }
 };
