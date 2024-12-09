@@ -229,6 +229,7 @@ export const removeMember = async (req, res) => {
 
     await GroupRequest.findOneAndDelete({
       $or: [{ senderId: user._id }, { receiverId: user._id }],
+      groupId,
     });
 
     await user.save();
