@@ -408,13 +408,13 @@ export const reviewInviteByUser = async (req, res) => {
       await request.save();
       for (const member of group.members) {
         const memberSocketId = getReceiverSocketId(member._id);
-        const user = {
+        const newUser = {
           _id: user._id,
           fullName: user.fullName,
           profilePic: user.profilePic,
         };
         if (memberSocketId) {
-          io.to(memberSocketId).emit("newMember", { groupId, user });
+          io.to(memberSocketId).emit("newMember", { groupId, user: newUser });
         }
       }
       return res.status(200).json({

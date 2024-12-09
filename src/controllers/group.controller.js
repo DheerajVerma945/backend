@@ -244,7 +244,7 @@ export const removeMember = async (req, res) => {
       if (memberSocketId) {
         io.to(memberSocketId).emit("updatedMembers", {
           groupId,
-          memberToRemove,
+          userId:memberToRemove,
         });
       }
     }
