@@ -132,6 +132,9 @@ export const reviewRequest = async (req, res) => {
         io.to(receiverSocketId).emit("newConnection", data);
       }
     }
+    if (status === "rejected") {
+      await UserRequest.findByIdAndDelete(request._id);
+    }    
     return res.status(200).json({
       status: "success",
       message: `Request ${status} successsfully`,
@@ -173,11 +176,10 @@ export const removeConnection = async (req, res) => {
     });
 
     const receiverSocketId = getReceiverSocketId(userId);
-    if(receiverSocketId){
-      io.to(receiverSocketId).emit("removedConnection",currUserId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("removedConnection", currUserId);
     }
 
-    
     return res.status(200).json({
       status: "success",
       message: "Connection removed successfully",
@@ -308,7 +310,10 @@ export const searchUser = async (req, res) => {
       });
     }
     const exisitingRequest = await UserRequest.findOne({
-      $or: [{ senderId: req.user._id }, { receiverId: req.user._id }],
+      $or: [
+        { senderId: req.user._id, receiverId: user._id },
+        { senderId: user._id, receiverId: req.user._id },
+      ],
     });
     if (exisitingRequest) {
       return res.status(200).json({

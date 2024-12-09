@@ -310,6 +310,10 @@ export const reviewInviteByAdmin = async (req, res) => {
       group.members = [...group.members, request.senderId._id];
       newMember.groups = [...newMember.groups, groupId];
     }
+    if (status === "rejected") {
+      await GroupRequest.findByIdAndDelete(request._id);
+    }
+
     await group.populate("members", "fullName profilePic");
     await newMember.save();
     await request.save();
@@ -390,15 +394,16 @@ export const reviewInviteByUser = async (req, res) => {
         message: "Only reciever can review the requests",
       });
     }
+
     if (status === "rejected") {
-      request.status = "rejected";
-      await request.save();
+      await GroupRequest.findByIdAndDelete(request._id);
       return res.status(200).json({
         status: "success",
-        message: "Rejected request successfully",
-        data: request,
+        message: "Request rejected successfully",
+        data: user,
       });
     }
+    
     if (status === "accepted") {
       group.members = [...group.members, user._id];
       user.groups = user.groups ? [...user.groups, groupId] : [groupId];
