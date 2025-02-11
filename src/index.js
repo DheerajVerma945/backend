@@ -30,6 +30,9 @@ app.use("/api/group/messages",groupChatRoutes);
 app.use("/api/user/request",userReqRoutes)
 app.use("/api/group/request",groupReqRoutes)
 
+app.use("/api/ping",(req,res)=>{
+  return res.status(200).json({message:"Pinged successfully"})
+})
 
 
 server.listen(PORT, () => {
